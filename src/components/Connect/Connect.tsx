@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BrowserProvider } from 'ethers';
+import { BrowserProvider, Eip1193Provider } from 'ethers';
+import { useFhevm } from '../Contexts/FhevmContext';
 
 import './Connect.css';
-import { Eip1193Provider } from 'ethers';
-import { createFhevmInstance } from '../../fhevmjs';
+import { Copy } from 'react-bootstrap-icons';
 
 const AUTHORIZED_CHAIN_ID = ['0x1f49', '0x1f4a', '0x1f4b', '0x2328'];
 
@@ -15,6 +15,10 @@ export const Connect: React.FC<{
   const [account, setAccount] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
+
+
+  // Use the context to access the FHEVM instance
+  const { instance, createInstance } = useFhevm();
 
   const refreshAccounts = (accounts: string[]) => {
     setAccount(accounts[0] || '');
@@ -28,12 +32,14 @@ export const Connect: React.FC<{
 
   const refreshNetwork = useCallback(async () => {
     if (await hasValidNetwork()) {
-      await createFhevmInstance();
+      if (!instance) {
+        await createInstance();
+      }
       setValidNetwork(true);
     } else {
       setValidNetwork(false);
     }
-  }, []);
+  }, [instance, createInstance]);
 
   const refreshProvider = (eth: Eip1193Provider) => {
     const p = new BrowserProvider(eth);
@@ -45,6 +51,15 @@ export const Connect: React.FC<{
     const eth = window.ethereum;
     if (!eth) {
       setError('No wallet has been found');
+      //Display a modal
+      const [showMetaMaskModal, setShowMetaMaskModal] = useState<boolean>(false);
+
+      useEffect(() => {
+        // Check for MetaMask or any Web3 provider
+        if (typeof window.ethereum === 'undefined') {
+          setShowMetaMaskModal(true);
+        }
+      }, []);
       return;
     }
 
@@ -56,10 +71,11 @@ export const Connect: React.FC<{
         await refreshNetwork();
       })
       .catch(() => {
-        // Do nothing
+        // Handle error appropriately
       });
     eth.on('accountsChanged', refreshAccounts);
     eth.on('chainChanged', refreshNetwork);
+
   }, [refreshNetwork]);
 
   const connect = async () => {
@@ -75,6 +91,7 @@ export const Connect: React.FC<{
         await switchNetwork();
       }
     }
+
   };
 
   const switchNetwork = useCallback(async () => {
@@ -104,20 +121,16 @@ export const Connect: React.FC<{
     await refreshNetwork();
   }, [refreshNetwork]);
 
-  const child = useMemo<React.ReactNode>(() => {
-    if (!account || !provider) {
-      return null;
-    }
+  const child = useMemo(() => {
+    if (!account || !provider) return null;
 
     if (!validNetwork) {
       return (
-        <div>
-          <p>You're not on the correct network</p>
-          <p>
-            <button className="Connect__button" onClick={switchNetwork}>
-              Switch to Zama Devnet
-            </button>
-          </p>
+        <div className="Connect__warning">
+          <p>You're not on the correct network. Please switch to Zama Devnet.</p>
+          <button className="Connect__button" onClick={switchNetwork}>
+            Switch Network
+          </button>
         </div>
       );
     }
@@ -125,18 +138,34 @@ export const Connect: React.FC<{
     return children(account, provider);
   }, [account, provider, validNetwork, children, switchNetwork]);
 
+
   if (error) {
-    return <p>No wallet has been found.</p>;
+    return <p className="Connect__error">No wallet has been found.</p>;
   }
+
+
+  const [copySuccess, setCopySuccess] = useState<string>('Click to Copy');
+
+  // Function to copy the address to the clipboard
+  const copyAddressToClipboard = (account: string) => {
+    navigator.clipboard.writeText(account)
+      .then(() => {
+        setCopySuccess('Copied!');
+        setTimeout(() => setCopySuccess('Click to Copy'), 2000); // Reset after 2 seconds
+      })
+      .catch(() => setCopySuccess('Copy Failed'));
+  };
+
 
   const connectInfos = (
     <div className="Connect__info">
-      {!connected && (
+      {!connected ? (
         <button className="Connect__button" onClick={connect}>
-          Connect your wallet
+          Connect Wallet
         </button>
+      ) : (
+         <span onClick={()=>copyAddressToClipboard(account)} title={copySuccess}> Connected: {account.substring(0, 5)}...{account.substring(account.length - 4)} <Copy /> </span>
       )}
-      {connected && <div className="Connect__account">Connected with {account}</div>}
     </div>
   );
 

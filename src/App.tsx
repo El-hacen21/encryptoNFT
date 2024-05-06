@@ -1,30 +1,89 @@
-import { useEffect, useState } from 'react';
-import { Devnet } from './components/Devnet';
-import { init } from './fhevmjs';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
 import './App.css';
-import { Connect } from './components/Connect';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { NavBar } from './components/NavBar/NavBar';
+import { Banner } from './components/Banner/Banner';
+import { Mint } from './components/Mint/Mint';
+import { Gallery } from './components/Gallery/Gallery';
+import { init } from './fhevmjs';
+import Footer from './components/Footer/Footer';
+
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { MetaMaskAlertModal } from './components/MetaMaskAlert'
+
+
+
 
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [showMetaMaskModal, setShowMetaMaskModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Check for MetaMask or any Web3 provider
+    if (typeof window.ethereum === 'undefined') {
+      setShowMetaMaskModal(true);
+    }
+  }, []);
+
 
   useEffect(() => {
     init()
       .then(() => {
         setIsInitialized(true);
+        setIsLoading(false);
       })
-      .catch(() => setIsInitialized(false));
+      .catch((e) => {
+        setError('Failed to initialize the application.');
+        setIsLoading(false);
+        console.error(e);
+      });
   }, []);
 
-  if (!isInitialized) return null;
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (showMetaMaskModal) {
+    return <MetaMaskAlertModal />;
+  }
+
 
   return (
-    <>
-      <h1>fhevmjs</h1>
-      <Connect>{(account, provider) => <Devnet />}</Connect>
-      <p className="read-the-docs">
-        <a href="https://docs.zama.ai/fhevm">See the documentation for more information</a>
-      </p>
-    </>
+
+    <Router>
+
+      <div >
+        <ToastContainer
+          position="top-right"
+          autoClose={7000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          style={{ zIndex: 9999 }}
+        />
+
+        <NavBar />
+        <Banner />
+        <Mint />
+        <Gallery />
+
+        <Footer githubUrl='diallo' />
+      </div>
+
+    </Router>
   );
 }
 

@@ -1,0 +1,174 @@
+/************ Gallery Css ************/
+
+.gallery-container {
+    align-items: center;
+    /* display: flex; */
+    justify-content: center;
+}
+
+/* .gallery-container .card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-actions button {
+    margin: 0 5px;
+}
+
+.card-img-top {
+    max-width: 10%;
+    height: auto;
+    max-height: 100px;
+} */
+
+.gallery-header {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: rgb(255, 255, 255);
+    background-color: rgb(0, 0, 0);
+    padding: 5px;
+}
+
+.header-divider {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border: 0;
+    border-top: 1px solid #3a3939;
+}
+
+.gallery-container .modern-button {
+    background: rgb(255, 165, 0);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    /* border-radius: 30px; */
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 6px rgba(255, 140, 0, 0.1);
+}
+
+.gallery-container .modern-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 140, 0, 0.15);
+    background-color: #030303;
+}
+
+.gallery-container .modern-button:focus {
+    outline: none;
+}
+
+
+
+/*************Table css**********/
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+
+thead {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+th,
+td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    height: 50px;
+    color: #434343;
+    font-variant: small-caps;
+    font-size: 14px;
+}
+
+td {
+    height: auto;
+    vertical-align: middle;
+
+}
+
+td img {
+    width: 20px;
+    height: 20px;
+}
+
+td button {
+    width: 20px;
+    height: 20px;
+    margin-left: 20px;
+
+}
+
+td .button-icon svg {
+    width: 16px;
+    height: auto;
+}
+
+
+td.size {
+    font-size: small;
+}
+
+th.actions {
+    width: 100px;
+}
+
+
+/* Specific Button Colors */
+.button-outline-primary {
+    color: #030303;
+}
+
+.button-outline-secondary {
+    color: #6c757d;
+}
+
+.button-outline-success {
+    color: #28a745;
+}
+
+.button-outline-danger {
+    color: #dc3545;
+}
+
+
+/* Row Hover Effect */
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+
+/* Pagination Styles */
+.pagination {
+    padding: 10px 0;
+    justify-content: center;
+}
+
+.pagination-item {
+    cursor: pointer;
+    padding: 5px 10px;
+    margin: 0 5px;
+    border: 1px solid #007bff;
+    color: #007bff;
+}
+
+
+.shared-separator {
+    background-color: #f0f0f0;
+    text-align: center;
+    font-weight: bold;
+    padding: 10px;
+}
