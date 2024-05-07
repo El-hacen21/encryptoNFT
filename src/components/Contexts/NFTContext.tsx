@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export interface NFTDetails {
+export interface NFTContent {
     id: number;
     file: File;
 }
 
 interface NFTContextType {
-    nfts: NFTDetails[];
-    addNFT: (nft: NFTDetails) => void;
-    updateNFTs: (nfts: NFTDetails[]) => void;
+    nfts: NFTContent[];
+    addNFT: (nft: NFTContent) => void;
+    updateNFTs: (nfts: NFTContent[]) => void;
     removeNFT: (id: number) => void; 
 }
 
@@ -19,15 +19,15 @@ interface ProviderProps {
 }
 
 export const NFTProvider: React.FC<ProviderProps> = ({ children }) => {
-    const [nfts, setNfts] = useState<NFTDetails[]>([]);
+    const [nfts, setNfts] = useState<NFTContent[]>([]);
 
     // Adds a new NFT to the list
-    const addNFT = (nft: NFTDetails) => {
+    const addNFT = (nft: NFTContent) => {
         setNfts((prevNfts) => [...prevNfts, nft]);
     };
 
     // Updates the entire NFT list
-    const updateNFTs = (nfts: NFTDetails[]) => {
+    const updateNFTs = (nfts: NFTContent[]) => {
         setNfts(nfts);
     };
 

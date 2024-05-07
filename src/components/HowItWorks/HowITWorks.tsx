@@ -33,7 +33,7 @@ const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ show, onHide }) => {
                 <h3>3. Managing Your NFTs</h3>
                 <ul>
                     <li>In the "Gallery" section, you can see all the NFTs you've minted.</li>
-                    <li>Click on any NFT to view more details or initiate actions like transferring, deleting, or sharing access.</li>
+                    <li>Click on any NFT to view more details or initiate actions like transferring, deleting, or sending access.</li>
                 </ul>
 
                 <h3>4. Transferring or Sending NFTs</h3>

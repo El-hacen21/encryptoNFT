@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0x35FA49dD9004154215861AEff0489876D66696C6';
+export const contractAddress = '0xfD053150831BaEEfc80A9A707272EF483EC01696';
 
 async function initializeProviderAndSigner() {
 	try {
@@ -25,7 +25,6 @@ async function initializeProviderAndSigner() {
 			console.warn('MetaMask or Web3 provider not found. Please install or enable it.');
 		}
 	} catch (error) {
-		// Catch any unexpected errors and log them
 		console.error('Error initializing Web3 provider:', error);
 	}
 
@@ -62,8 +61,10 @@ export async function getAccount(): Promise<string | null> {
 // Define a type for the token details to improve readability and maintainability
 export interface TokenDetails {
 	tokenId: number;  // or number, depending on how token IDs are handled in your contract
-	uri: string;
+	cidHash: string;
 };
+
+
 async function getEvent(
 	tx: any,
 	eventName: string,
@@ -81,17 +82,22 @@ async function getEvent(
 	return null;
 }
 
-export async function mintToken(cid: string): Promise<TokenDetails> {
+export async function mintToken(cidHash: string): Promise<TokenDetails> {
 	try {
-		const txResponse = await contract.mint(cid);
+		const txResponse = await contract.mintToken(cidHash);
 
 		const tokenMintedEvent = await getEvent(txResponse, 'TokenMinted');
 		if (!tokenMintedEvent) throw new Error('TokenMinted event not found.');
 
-		const tokenId: number = Number(tokenMintedEvent.args[0]); // Convert from BigNumber if needed
-		const uri: string = tokenMintedEvent.args[1];
+		/**
+		 * The `tokenId` and `cidHashOutput=cidHash` variables are used to optimize how the gallery updates after the minting process.
+		 * Once the token is minted, it will be displayed directly in the gallery without the need to invoke a function on the contract to update the display.
+		 */
 
-		return { tokenId, uri }; // Return as a structured object
+		const tokenId: number = Number(tokenMintedEvent.args[0]); // Convert from BigNumber if needed
+		const cidHashOutput: string = tokenMintedEvent.args[1];
+
+		return { tokenId: tokenId, cidHash: cidHashOutput }; // Return as a structured object
 	} catch (error) {
 		console.error('Error minting token:', error);
 		throw error;
@@ -106,22 +112,22 @@ export async function mintToken(cid: string): Promise<TokenDetails> {
  * @param count The number of tokens to fetch starting from the `start` index.
  * @returns An array of `TokenDetails` containing token IDs and their URIs.
  */
-export async function getMyTokens(start: number, count: number): Promise<TokenDetails[]> {
+export async function getTokensInRange(start: number, count: number): Promise<TokenDetails[]> {
 	try {
 		// Use the start index and count to determine the range to fetch
 		const end = start + count;
 
 		// Call the smart contract to fetch tokens in this range
-		const result = await contract.getMyTokensInRange(start, end);
+		const result = await contract.getTokensInRange(start, end);
 
 		// Expect result to be an array of arrays: [token IDs, URIs]
 		const tokenIds: number[] = result[0];
-		const uris: string[] = result[1];
+		const cidHashs: string[] = result[1];
 
 		// Map token IDs to their corresponding URIs to form an array of TokenDetails
 		const tokens: TokenDetails[] = tokenIds.map((tokenId, index) => ({
 			tokenId,
-			uri: uris[index]
+			cidHash: cidHashs[index]
 		}));
 
 		return tokens;
@@ -151,33 +157,33 @@ export async function transferToken(to: string, tokenId: number): Promise<Boolea
 }
 
 
-/**
- * Shares a token with multiple recipients.
- *
- * @param to An array of recipient addresses to share the token with.
- * @param tokenId The ID of the token to be shared.
- * @returns `true` if the transaction succeeds, `false` otherwise.
- */
-export async function shareToken(to: string[], tokenId: number): Promise<boolean> {
-	try {
-		// Ensure the array is not empty
-		if (to.length === 0) {
-			throw new Error('Recipient list cannot be empty.');
-		}
+// /**
+//  * Shares a token with multiple recipients.
+//  *
+//  * @param to An array of recipient addresses to share the token with.
+//  * @param tokenId The ID of the token to be shared.
+//  * @returns `true` if the transaction succeeds, `false` otherwise.
+//  */
+// export async function shareToken(to: string[], tokenId: number): Promise<boolean> {
+// 	try {
+// 		// Ensure the array is not empty
+// 		if (to.length === 0) {
+// 			throw new Error('Recipient list cannot be empty.');
+// 		}
 
-		// Call the contract's `shareToken` function with the array of addresses
-		const tx = await contract.shareToken(tokenId, to);
-		console.log('Transaction hash:', tx.hash);
+// 		// Call the contract's `shareToken` function with the array of addresses
+// 		const tx = await contract.shareToken(tokenId, to);
+// 		console.log('Transaction hash:', tx.hash);
 
-		// Wait for the transaction to confirm
-		await tx.wait();
+// 		// Wait for the transaction to confirm
+// 		await tx.wait();
 
-		return true;
-	} catch (error) {
-		console.error('Error sharing token:', error);
-		return false;
-	}
-}
+// 		return true;
+// 	} catch (error) {
+// 		console.error('Error sharing token:', error);
+// 		return false;
+// 	}
+// }
 
 
 
@@ -199,9 +205,9 @@ export async function burnToken(tokenId: number): Promise<Boolean> {
 
 
 
-export async function getMySupply(): Promise<number> {
+export async function getSupply(): Promise<number> {
 	try {
-		const totalNFTs = await contract.getMySupply();
+		const totalNFTs = await contract.getSupply();
 
 		// Output the total number of NFTs
 		console.log(`Total NFTs: ${totalNFTs.toString()}`);

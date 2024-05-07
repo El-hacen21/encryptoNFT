@@ -2,15 +2,15 @@ import './Gallery.css'
 import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper } from './Helpers';
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
-import { burnToken, getMyTokens, shareToken, transferToken, tokenOf, getAccount, contractAddress, getMySupply } from '../Blockchain/contract';
-import { EncryptedFile, decryptFile, getEncryptedFileFromCidHash, DecryptedFileMetaData } from '../Utils/utils'
-import { deserializeEncryptedKeys } from '../Utils/other'
-import { importCryptoKey } from '../Utils/keyencrypt'
+import { burnToken, getTokensInRange, transferToken, tokenOf, getAccount, contractAddress, getSupply, mintToken } from '../Blockchain/contract';
+import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData, encryptFile, fileKeyEncryption, uploadFileToIPFS } from '../Utils/utils'
+import { deserializeEncryptedKeyParts } from '../Utils/other'
+import { importCryptoKey, generateKey } from '../Utils/keyencrypt'
 import { useFhevm } from '../Contexts/FhevmContext';
 import { useNFTs } from '../Contexts/NFTContext';
 import { toast } from 'react-toastify'
 import { ArrowClockwise } from 'react-bootstrap-icons';
-
+import { getSignature } from '../../fhevmjs';
 
 export const Gallery = () => {
     const [page, setPage] = useState(0);
@@ -22,20 +22,25 @@ export const Gallery = () => {
     const { nfts, removeNFT, updateNFTs } = useNFTs();
 
 
+    const handleSend = async (to: string, file: File) => {
+        // const fileKey = await generateKey();
+        // const account = await getAccount();
+        // if (!account) throw new Error("Account retrieval failed.");
+        // if (!instance) throw new Error("Instance retrieval failed.");
 
-    const handleShare = async (tokenId: number, address: string) => {
-        const response = await shareToken([address], tokenId);
+        // await getSignature(contractAddress, account);
+        // const encryptedFileKey = await fileKeyEncryption(fileKey, instance);
+        // const ciphFile = await encryptFile(file, fileKey);
+        // const encryptedFile = { ...ciphFile, encryptedFileKey };
+        // const cidHash = await uploadFileToIPFS(encryptedFile);
 
-        if (response) {
-            toast.success("The NFT #" + tokenId + " access has been shared to with : " + address);
+        toast.error(`Not ready yet :`);
 
-        } else {
-            toast.error("Could not share the NFT!");
-        }
+        
     };
 
-    const handleTransfer = async (tokenId: number, address: string) => {
-        const response = await transferToken(address, tokenId);
+    const handleTransfer = async (tokenId: number, to: string) => {
+        const response = await transferToken(to, tokenId);
 
         if (response) {
             toast.success("The NFT has been transfered and will be no more accessible!");
@@ -66,9 +71,7 @@ export const Gallery = () => {
         if (!instance) {
             createInstance().catch(console.error);
         }
-
     }, [instance, createInstance, page]);
-
 
 
 
@@ -87,7 +90,7 @@ export const Gallery = () => {
 
         try {
             // Fetch total number of NFTs to manage pagination or UI elements
-            const total = await getMySupply();
+            const total = await getSupply();
             setTotalItems(total);
 
             if (total <= 0) {
@@ -96,21 +99,15 @@ export const Gallery = () => {
             }
 
             // Fetch and process NFTs
-            const tokensFromContract = await getMyTokens(0, 5); // Adjust the pagination as needed
-        
+            const tokensFromContract = await getTokensInRange(0, 5); // Adjust the pagination as needed
+
             const account = await getAccount();
             if (!account) throw new Error("Account retrieval failed.");
 
-            const reencryption = instance.generatePublicKey({ verifyingContract: contractAddress });
-            const params = [account, JSON.stringify(reencryption.eip712)];
-            const signature = await window.ethereum.request({
-                method: "eth_signTypedData_v4",
-                params,
-            });
-            // instance.setSignature(contractAddress, signature);
+            const reencryption = await getSignature(contractAddress, account);
 
             const updatedTokens = await Promise.all(tokensFromContract.map(async (token) => {
-                const decryptedFile = await handleDecryption(token.uri, reencryption.publicKey, signature); // Decrypt each file
+                const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature); // Decrypt each file
                 return {
                     id: Number(token.tokenId),
                     file: decryptedFile.file
@@ -127,15 +124,13 @@ export const Gallery = () => {
     };
 
 
-    const handleDecryption = async (cidHash: string, publicKey: any, signature: any): Promise<DecryptedFileMetaData> => {
+    const reEncryptedFileKey = async (cidHash: string, publicKey: any, signature: any): Promise<DecryptedFileMetaData> => {
         if (!instance) throw new Error("Intance retrieval failed.");
 
-        const encryptedFile: EncryptedFile = await getEncryptedFileFromCidHash(cidHash);
+        const encryptedFile = await getEncryptedFileCidHash(cidHash);
         if (!encryptedFile) throw new Error("Dencrypting data failed.");
 
-
-        console.log("encryptedFile.encryptionKey :: ", encryptedFile.encryptionKey);
-        const encryptedKeys = deserializeEncryptedKeys(encryptedFile.encryptionKey);
+        const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
         const data = await tokenOf(publicKey, signature, encryptedKeys);
         let decryptedKey: bigint[] = [];
@@ -145,7 +140,7 @@ export const Gallery = () => {
                 // if (!instance) throw new Error("Intance retrieval failed.");
                 const result = instance.decrypt(contractAddress, element);
                 decryptedKey.push(result);
-                console.log(`Decrypted ${index}: ${result}`);
+                // console.log(`Decrypted ${index}: ${result}`);
             }
         });
 
@@ -208,8 +203,8 @@ export const Gallery = () => {
                                 <td>
                                     <ActionButtonHelper
                                         onDownload={() => downloadFile(token.file)}
-                                        onShare={(address) => handleShare(token.id, address)}
-                                        onTransfer={(address) => handleTransfer(token.id, address)}
+                                        onSend={(to) => handleSend(to, token.file)}
+                                        onTransfer={(to) => handleTransfer(token.id, to)}
                                         onDelete={() => handleDelete(token.id)}
                                         nftNumber={token.id}
                                     />
@@ -218,11 +213,6 @@ export const Gallery = () => {
                             </tr>
 
                         ))}
-                        <tr>
-                            <td colSpan={4} className="shared-separator">
-                                <strong>Shared With Me</strong>
-                            </td>
-                        </tr>
                     </tbody>
                 </Table>
             )}

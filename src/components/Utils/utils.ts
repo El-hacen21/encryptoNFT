@@ -1,30 +1,32 @@
 
 import { convertCounterObjectToUint8Array, readFileAsArrayBuffer, arrayBufferToFile, base64ToArrayBuffer, bufferToBase64 } from './other';
-import { encryptionAlgorithm } from './keyencrypt'
+import { encryptionAlgorithm, exportCryptoKey } from './keyencrypt'
 import axios from 'axios';
 import { IPFSConfig } from '../../config';
+import { FhevmInstance } from 'fhevmjs';
 
 
-export interface EncryptedFile {
+export interface CiphFile {
   encryptedFileData: string;  // Base64 encoded string
   encryptedMetadata: string;  // Base64 encoded string
-  encryptionDetails: {
+  encryptionAlgorithm: {
     name: string;
-    counter: Uint8Array;  // Base64 encoded string
+    counter: Uint8Array;
     length: number;
   };
-  encryptionKey: Uint8Array[];
+
 }
 
+export interface EncryptedFile extends CiphFile {
+  encryptedFileKey: Uint8Array[];  // Array of Uint8Array, each representing a key segment resulting from instance.encrypt64
+}
 
 export interface DecryptedFileMetaData {
   file: File;
-  // name: string;
-  // type: string;
 }
 
 
-export async function encryptFile(file: File, key: CryptoKey, encryptedParts: Uint8Array[]): Promise<EncryptedFile> {
+export async function encryptFile(file: File, key: CryptoKey): Promise<CiphFile> {
   // Define the metadata object
   const metadata = {
     name: file.name,
@@ -35,9 +37,6 @@ export async function encryptFile(file: File, key: CryptoKey, encryptedParts: Ui
   // Convert the metadata object to a string
   const metadataString = JSON.stringify(metadata);
 
-  // Log the object and the string
-  console.log("Metadata Object:", metadata);
-  console.log("Encoded Metadata as String:", metadataString);
 
   // Convert the metadata string to an ArrayBuffer
   const encoder = new TextEncoder();
@@ -45,7 +44,6 @@ export async function encryptFile(file: File, key: CryptoKey, encryptedParts: Ui
 
 
   const arrayBuffer = await readFileAsArrayBuffer(file);
-
   try {
     // Encrypt the file data
     const encryptedFileData = await window.crypto.subtle.encrypt(
@@ -62,16 +60,13 @@ export async function encryptFile(file: File, key: CryptoKey, encryptedParts: Ui
       metadataArrayBuffer
     );
 
-    // console.log("Encrypted counter : ", encryptionAlgorithm.counter);
+    // console.log("metadataString", metadataString);
 
-    const encryptedFile = {
+    const encryptedFile: CiphFile = {
       encryptedFileData: bufferToBase64(encryptedFileData),
       encryptedMetadata: bufferToBase64(encryptedMetadata),
-      encryptionDetails: { name: encryptionAlgorithm.name, length: encryptionAlgorithm.length, counter: encryptionAlgorithm.counter },
-      encryptionKey: encryptedParts
+      encryptionAlgorithm: { name: encryptionAlgorithm.name, length: encryptionAlgorithm.length, counter: encryptionAlgorithm.counter },
     };
-
-    // console.log("Encryption File  :", encryptedFile);
 
 
     return encryptedFile;
@@ -84,41 +79,44 @@ export async function encryptFile(file: File, key: CryptoKey, encryptedParts: Ui
 
 
 
-export async function decryptFile(encryptedFile: EncryptedFile, key: CryptoKey): Promise<DecryptedFileMetaData> {
+export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<DecryptedFileMetaData> {
   try {
     // Ensure the counter is a Uint8Array
-    const counter = convertCounterObjectToUint8Array(encryptedFile.encryptionDetails.counter);
+    const counter = convertCounterObjectToUint8Array(ciphFile.encryptionAlgorithm.counter);
 
-
+    // console.log("Decrypted counter : ", encryptionAlgorithm.counter);
     // Decrypt the data using the provided key and algorithm details
     const decryptedData = await window.crypto.subtle.decrypt(
       {
-        name: encryptedFile.encryptionDetails.name,
+        name: ciphFile.encryptionAlgorithm.name,
         counter: counter, // Now explicitly a BufferSource
-        length: encryptedFile.encryptionDetails.length
+        length: ciphFile.encryptionAlgorithm.length
       },
       key,
-      base64ToArrayBuffer(encryptedFile.encryptedFileData)
+      base64ToArrayBuffer(ciphFile.encryptedFileData)
     );
 
     const decryptedMetaData = await window.crypto.subtle.decrypt(
       {
-        name: encryptedFile.encryptionDetails.name,
+        name: ciphFile.encryptionAlgorithm.name,
         counter: counter,
-        length: encryptedFile.encryptionDetails.length
+        length: ciphFile.encryptionAlgorithm.length
       },
       key,
-      base64ToArrayBuffer(encryptedFile.encryptedMetadata)
+      base64ToArrayBuffer(ciphFile.encryptedMetadata)
     );
 
-    // Decode ArrayBuffer back to string
-    const decoder = new TextDecoder();
-    const decodedMetadataString = decoder.decode(decryptedMetaData);
+    console.log('Encrypted Metadata: ', ciphFile.encryptedMetadata);
+
+    const decodedMetadataString = new TextDecoder().decode(decryptedMetaData);
+    // console.log("Decrypted Metadata String:", decodedMetadataString); 
+
     const decodedMetadata = JSON.parse(decodedMetadataString);
+
+
+
     return {
       file: arrayBufferToFile(decryptedData, decodedMetadata.name, decodedMetadata.type),
-      // name: decodedMetadata.name,
-      // type: decodedMetadata.type
     };
   } catch (error) {
     console.error("Decryption failed:", error);
@@ -132,37 +130,39 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile) => {
   const encoder = new TextEncoder();
   const metadataArrayBuffer = encoder.encode(encryptedFileString);
 
+  // console.log("encryptedFileString : ", encryptedFileString);
+
   const formData = new FormData();
   formData.append("file", new Blob([metadataArrayBuffer], { type: 'application/json' }));
 
   try {
-      const response = await fetch(IPFSConfig.apiURL, {
-          method: 'POST',
-          body: formData,
-      });
+    const response = await fetch(IPFSConfig.apiURL, {
+      method: 'POST',
+      body: formData,
+    });
 
-      if (!response.ok) {
-          throw new Error(`IPFS upload failed: ${response.statusText}`);
-      }
+    if (!response.ok) {
+      throw new Error(`IPFS upload failed: ${response.statusText}`);
+    }
 
-      const json = await response.json();
-      const hash = json.Hash;
-      console.log(`File uploaded to local IPFS with hash: ${hash}`);
-      return `${IPFSConfig.gatewayURL}/${hash}`;  // Returns the URL via configured gateway
+    const json = await response.json();
+    const hash = json.Hash;
+    console.log(`File uploaded to local IPFS with hash: ${hash}`);
+    return `${IPFSConfig.gatewayURL}/${hash}`;  // Returns the URL via configured gateway
   } catch (error) {
-      console.error("Error uploading to IPFS:", error);
-      throw error;
+    console.error("Error uploading to IPFS:", error);
+    throw error;
   }
 };
 
 
 
 // Function to fetch encrypted file data using a CID hash
-export async function getEncryptedFileFromCidHash(cidHash: string): Promise<EncryptedFile> {
+export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
   try {
     const response = await axios.get(cidHash); // Assuming cidHash is the full URL to the resource
     if (response.data) {
-      // Assuming the response.data is already in the format of EncryptedFile,
+      // Assuming the response.data is already in the format of CiphFile ,
       return response.data as EncryptedFile;
     } else {
       throw new Error("No data returned from the server.");
@@ -173,3 +173,16 @@ export async function getEncryptedFileFromCidHash(cidHash: string): Promise<Encr
     throw error;
   }
 }
+
+
+export const fileKeyEncryption = async (fileKey: CryptoKey, instance: FhevmInstance): Promise<Uint8Array[]> => {
+  const encryptedFileKey: Uint8Array[] = [];
+
+  const keySegments = await exportCryptoKey(fileKey);
+  for (const segment of keySegments) {
+    const encrypted = instance.encrypt32(segment);
+    encryptedFileKey.push(encrypted);
+  }
+
+  return encryptedFileKey;
+};

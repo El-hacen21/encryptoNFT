@@ -14,11 +14,6 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // Mapping from token ID to its index in the owner's array
     mapping(uint256 => uint256) private tokenIndex;
 
-    // Mapping from token ID to a list of addresses with shared access
-    mapping(uint256 => address[]) private sharedAccess;
-    // Mapping from address to a list of shared tokens
-    mapping(address => uint256[]) private tokensSharedWith;
-
     // Constant values used in the contract
     string private constant _TOKEN_NAME = "DRMNFT";
     string private constant _TOKEN_SYMBOL = "DRM";
@@ -28,35 +23,40 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     }
 
     // Public function to mint a new token
-    function mint(string calldata cid)
+    function mintToken(string calldata cidHash)
         external
         returns (uint256, string memory)
     {
-        require(bytes(cid).length > 0, "CID cannot be empty.");
+        require(bytes(cidHash).length > 0, "CID cannot be empty.");
         uint256 tokenId = mintedCounter;
 
         _safeMint(msg.sender, tokenId);
-        _setTokenURI(tokenId, cid);
+        _setTokenURI(tokenId, cidHash);
 
         ownerTokens[msg.sender].push(tokenId);
         tokenIndex[tokenId] = ownerTokens[msg.sender].length - 1;
         mintedCounter++;
 
-        emit TokenMinted(tokenId, cid);
-        return (tokenId, cid);
+
+        emit TokenMinted(tokenId, cidHash);
+        return (tokenId, cidHash);
     }
 
     // Function to retrieve the number of tokens owned by the caller
-    function getMySupply() external view returns (uint256) {
+    function getSupply()
+        external
+        view
+        returns (uint256)
+    {
         return ownerTokens[msg.sender].length;
     }
 
     // Public function to get a list of tokens with pagination
-    function getMyTokensInRange(uint256 start, uint256 end)
-        external
-        view
-        returns (uint256[] memory, string[] memory)
-    {
+    function getTokensInRange(
+        uint256 start,
+        uint256 end
+    ) external view returns (uint256[] memory, string[] memory) {
+
         uint256[] storage allTokens = ownerTokens[msg.sender];
         uint256 totalTokens = allTokens.length;
 
@@ -79,6 +79,7 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     function transferToken(address to, uint256 tokenId)
         external
         onlyTokenOwner(tokenId)
+        isNotZeroAddress(to)
     {
         safeTransferFrom(msg.sender, to, tokenId);
         _removeTokenFromOwnerEnumeration(msg.sender, tokenId);
@@ -90,27 +91,8 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     function burnToken(uint256 tokenId) external onlyTokenOwner(tokenId) {
         _burn(tokenId);
         _removeTokenFromOwnerEnumeration(msg.sender, tokenId);
-        delete sharedAccess[tokenId];
     }
 
-    // Function to share a token with other addresses
-    function shareToken(uint256 tokenId, address[] calldata recipients)
-        external
-        onlyTokenOwner(tokenId)
-    {
-        for (uint256 i = 0; i < recipients.length; i++) {
-            require(
-                recipients[i] != address(0),
-                "Cannot share with zero address"
-            );
-            sharedAccess[tokenId].push(recipients[i]);
-        }
-    }
-
-    // Function to retrieve a list of tokens shared with msg.sender
-    function getSharedWithMe() external view returns (uint256[] memory) {
-        return tokensSharedWith[msg.sender];
-    }
 
     // Function for re-encrypting the NFT encryption key before calling instance.decrypt locally
     function tokenOf(
@@ -125,7 +107,7 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     {
         require(
             nftEncryptionKey.length == 8,
-            "The NFT encryption key must be a table of size 4"
+            "The NFT encryption key must be a table of size 8"
         );
 
         // Declaring an array to hold re-encrypted data
@@ -134,7 +116,7 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         // Re-encrypt each key
         for (uint256 i = 0; i < nftEncryptionKey.length; i++) {
             euint32 ekey = TFHE.asEuint32(nftEncryptionKey[i]);
-            reEncryptedKeys[i] = TFHE.reencrypt(ekey, publicKey, 0);
+            reEncryptedKeys[i] = TFHE.reencrypt(ekey, publicKey);
         }
 
         return reEncryptedKeys;
@@ -163,6 +145,12 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         _;
     }
 
-    // Events
-    event TokenMinted(uint256 indexed tokenId, string tokenURI);
+    // Modifier to check address is not zero
+    modifier isNotZeroAddress(address addr) {
+        require(addr != address(0), "Cannot share with zero address.");
+        _;
+    }
+
+    // Event to 
+    event TokenMinted(uint256 indexed tokenId, string cidHash);
 }

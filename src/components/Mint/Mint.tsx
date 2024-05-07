@@ -3,11 +3,12 @@ import './Mint.css'
 import React, { useState, useEffect } from 'react';
 import uploadIcon from "../../assets/img/upload-icon.jpg";
 import { useFhevm } from '../Contexts/FhevmContext';
-import { mintToken } from '../Blockchain/contract'
-import { generateKey, exportCryptoKey } from '../Utils/keyencrypt'
-import { useNFTs, NFTDetails } from '../Contexts/NFTContext';
-import { encryptFile, uploadFileToIPFS } from '../Utils/utils'
+import { mintToken, contractAddress, getAccount } from '../Blockchain/contract'
+import { generateKey } from '../Utils/keyencrypt'
+import { useNFTs, NFTContent } from '../Contexts/NFTContext';
+import { fileKeyEncryption, encryptFile, uploadFileToIPFS } from '../Utils/utils'
 import { toast } from 'react-toastify'
+import { getSignature } from '../../fhevmjs';
 
 
 
@@ -32,23 +33,34 @@ export const Mint = () => {
     });
   };
 
-  const handleFileEncryption = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+  const EncryptThenMint = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     if (!e.target.files || e.target.files.length === 0) return;
 
     const file = e.target.files[0];
 
     try {
-      const encKey = await generateKey();
-      const encryptedParts = await handleKeyEncryption(encKey);
-      const ecryptedFile = await encryptFile(file, encKey, encryptedParts);
-      const cidHash = await uploadFileToIPFS(ecryptedFile);
+      const fileKey = await generateKey();
+
+      const account = await getAccount();
+      if (!account) throw new Error("Account retrieval failed.");
+      if (!instance) throw new Error("Intance retrieval failed.");
+
+      await getSignature(contractAddress, account);
+
+      const encryptedFileKey = await fileKeyEncryption(fileKey, instance);
+      const ciphFile = await encryptFile(file, fileKey);
+
+      const encryptedFile = { ...ciphFile, encryptedFileKey };
+
+      const cidHash = await uploadFileToIPFS(encryptedFile);
 
       toast.info("Your file is currently being minted as an NFT. This may take a few moments.");
+
       const token = await mintToken(cidHash);
 
       if (token) {
-        const nftDetail: NFTDetails = { id: Number(token.tokenId), file: file };
-        addNFT(nftDetail);
+        const nftContent: NFTContent = { id: Number(token.tokenId), file: file };
+        addNFT(nftContent);
         toast.success("The File has been minted as an NFT and will soon appear in your gallery!");
       }
 
@@ -60,20 +72,7 @@ export const Mint = () => {
 
 
 
-  const handleKeyEncryption = async (encKey: CryptoKey): Promise<Uint8Array[]> => {
-    const encryptedParts: Uint8Array[] = [];
-
-    if (!instance) throw new Error("Intance retrieval failed.");
-
-    const keySegments = await exportCryptoKey(encKey);
-    for (const segment of keySegments) {
-      const encrypted = instance.encrypt32(segment);
-      encryptedParts.push(encrypted);
-    }
-
-    return encryptedParts;
-  };
-
+  
   useEffect(() => {
     if (!instance) {
       createInstance().catch(console.error);
@@ -95,7 +94,7 @@ export const Mint = () => {
                     id="file-upload-input"
                     type="file"
                     style={{ display: 'none' }}
-                    onChange={handleFileEncryption}
+                    onChange={EncryptThenMint}
                     accept=".jpg, .jpeg, .png, .gif, .pdf, .doc, .docx, .mp4"
                   />
                   <div className="upload-area">

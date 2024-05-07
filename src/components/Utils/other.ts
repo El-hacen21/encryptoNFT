@@ -111,7 +111,7 @@ export const deserializeBase64ToUint8Array = (base64Array?: string[]): Uint8Arra
 };
 
 
-export const deserializeEncryptedKeys = (encryptedKeys: any[]): Uint8Array[] => {
+export const deserializeEncryptedKeyParts = (encryptedKeys: any[]): Uint8Array[] => {
   return encryptedKeys.map(convertCounterObjectToUint8Array);
 };
 
