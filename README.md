@@ -70,10 +70,14 @@ Ce document fournit une vue d'ensemble du processus de création, de gestion et 
     - Utilisation de `fileKey` pour décrypter `ecryptedFile` et accéder à `decryptedFile` qui contient le contenu en clair.
 
 
+## Pas encore Prêt du côté de l'interface
+
+1. Affichage des documents partagés : Dans la galerie, je prévois d'ajouter une section pour afficher les documents (NFTs) partagés.
+
+2. Gestion de la révocation d'accès et de la révocation.
+
 ## Questions
 
 1. Masquer l'ownership d'une adresse dans un smart contract : Utiliser `mapping(address => uint256[]) private ownerTokens` dans `contract.sol` ne cache pas complètement l'ownership car msg.sender est toujours visible sur la blockchain, et nous ne sommes pas certains que cela résout le problème de suivi de l'ownership des NFTs cryptés. La solution idéale serait d'appliquer un Zero-Knowledge Proof (ZKP) à l'account, mais nous ne sommes pas certains de pouvoir l'implémenter.
 
-
-2. Transfert et partage d'un NFT : Nous pouvons transférer un NFT, mais pour le partager ou l'envoyer, une solution simple serait de le minter directement au bénéficiaire. Toutefois, cela nécessite normalement une autorisation. Même pour le transfert, une acceptation est requise. Auriez-vous des suggestions ?
-
+2. `instance.getSignature` est appelée dans la galerie pour afficher la liste des NFTs. Serait-il mieux de l'enregistrer localement pour d'autres utilisations ? Auriez-vous des idées ?"

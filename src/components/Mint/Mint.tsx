@@ -3,12 +3,11 @@ import './Mint.css'
 import React, { useState, useEffect } from 'react';
 import uploadIcon from "../../assets/img/upload-icon.jpg";
 import { useFhevm } from '../Contexts/FhevmContext';
-import { mintToken, contractAddress, getAccount } from '../Blockchain/contract'
+import { mintToken, getAccount } from '../Blockchain/contract'
 import { generateKey } from '../Utils/keyencrypt'
 import { useNFTs, NFTContent } from '../Contexts/NFTContext';
 import { fileKeyEncryption, encryptFile, uploadFileToIPFS } from '../Utils/utils'
 import { toast } from 'react-toastify'
-import { getSignature } from '../../fhevmjs';
 
 
 
@@ -44,8 +43,6 @@ export const Mint = () => {
       const account = await getAccount();
       if (!account) throw new Error("Account retrieval failed.");
       if (!instance) throw new Error("Intance retrieval failed.");
-
-      await getSignature(contractAddress, account);
 
       const encryptedFileKey = await fileKeyEncryption(fileKey, instance);
       const ciphFile = await encryptFile(file, fileKey);

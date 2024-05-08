@@ -48,13 +48,13 @@ export function formatFileSize(bytes: number, decimals = 2) {
 
 interface ActionButtonProps {
     onDownload: () => void;
-    onSend: (recipientAddress: string) => void;
+    onShare: (recipientAddress: string) => void;
     onTransfer: (recipientAddress: string) => void;
     onDelete: () => void;
     nftNumber?: number;
 }
 
-export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, onSend, onTransfer, onDelete, nftNumber = null }) => {
+export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, onShare, onTransfer, onDelete, nftNumber = null }) => {
     const [showModal, setShowModal] = useState(false);
     const [actionType, setActionType] = useState<string>('');
     const [recipientAddress, setRecipientAddress] = useState<string>('');
@@ -68,7 +68,7 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
     const performAction = () => {
         setShowModal(false);
         if (actionType === 'Share') {
-            onSend(recipientAddress);
+            onShare(recipientAddress);
         } else if (actionType === 'Transfer') {
             onTransfer(recipientAddress);
         } else if (actionType === 'Delete') {
@@ -109,7 +109,7 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
                     </OverlayTrigger>
                     <OverlayTrigger placement="top" overlay={(props) => renderTooltip(props, 'Share')}>
                         <Dropdown.Item onClick={() => handleConfirm('Share')}>
-                            Send
+                            Share
                         </Dropdown.Item>
                     </OverlayTrigger>
                     <OverlayTrigger placement="top" overlay={(props) => renderTooltip(props, 'Transfer')}>

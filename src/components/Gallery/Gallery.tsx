@@ -2,10 +2,10 @@ import './Gallery.css'
 import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper } from './Helpers';
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
-import { burnToken, getTokensInRange, transferToken, tokenOf, getAccount, contractAddress, getSupply, mintToken } from '../Blockchain/contract';
-import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData, encryptFile, fileKeyEncryption, uploadFileToIPFS } from '../Utils/utils'
+import { burnToken, getTokensInRange, transferToken, tokenOf, getAccount, contractAddress, getSupply, shareToken } from '../Blockchain/contract';
+import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData} from '../Utils/utils'
 import { deserializeEncryptedKeyParts } from '../Utils/other'
-import { importCryptoKey, generateKey } from '../Utils/keyencrypt'
+import { importCryptoKey } from '../Utils/keyencrypt'
 import { useFhevm } from '../Contexts/FhevmContext';
 import { useNFTs } from '../Contexts/NFTContext';
 import { toast } from 'react-toastify'
@@ -22,25 +22,19 @@ export const Gallery = () => {
     const { nfts, removeNFT, updateNFTs } = useNFTs();
 
 
-    const handleSend = async (to: string, file: File) => {
-        // const fileKey = await generateKey();
-        // const account = await getAccount();
-        // if (!account) throw new Error("Account retrieval failed.");
-        // if (!instance) throw new Error("Instance retrieval failed.");
+    const handleShare = async (tokenId: number, to: string) => {
+        const response = await shareToken(to, tokenId);
 
-        // await getSignature(contractAddress, account);
-        // const encryptedFileKey = await fileKeyEncryption(fileKey, instance);
-        // const ciphFile = await encryptFile(file, fileKey);
-        // const encryptedFile = { ...ciphFile, encryptedFileKey };
-        // const cidHash = await uploadFileToIPFS(encryptedFile);
+        if (response) {
+            toast.success("The NFT has been sent and will be no more accessible!");
 
-        toast.error(`Not ready yet :`);
-
-        
+        } else {
+            toast.error("Could not send the NFT!");
+        }
     };
 
     const handleTransfer = async (tokenId: number, to: string) => {
-        const response = await transferToken(to, tokenId);
+        const response = await transferToken(tokenId, to);
 
         if (response) {
             toast.success("The NFT has been transfered and will be no more accessible!");
@@ -107,7 +101,7 @@ export const Gallery = () => {
             const reencryption = await getSignature(contractAddress, account);
 
             const updatedTokens = await Promise.all(tokensFromContract.map(async (token) => {
-                const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature); // Decrypt each file
+                const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
                 return {
                     id: Number(token.tokenId),
                     file: decryptedFile.file
@@ -124,7 +118,7 @@ export const Gallery = () => {
     };
 
 
-    const reEncryptedFileKey = async (cidHash: string, publicKey: any, signature: any): Promise<DecryptedFileMetaData> => {
+    const reEncryptedFileKey = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
         if (!instance) throw new Error("Intance retrieval failed.");
 
         const encryptedFile = await getEncryptedFileCidHash(cidHash);
@@ -132,15 +126,13 @@ export const Gallery = () => {
 
         const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
-        const data = await tokenOf(publicKey, signature, encryptedKeys);
+        const data = await tokenOf(publicKey, signature, encryptedKeys, tokenId);
         let decryptedKey: bigint[] = [];
 
-        data.forEach((element, index) => {
+        data.forEach((element) => {
             if (element) {
-                // if (!instance) throw new Error("Intance retrieval failed.");
                 const result = instance.decrypt(contractAddress, element);
                 decryptedKey.push(result);
-                // console.log(`Decrypted ${index}: ${result}`);
             }
         });
 
@@ -203,7 +195,7 @@ export const Gallery = () => {
                                 <td>
                                     <ActionButtonHelper
                                         onDownload={() => downloadFile(token.file)}
-                                        onSend={(to) => handleSend(to, token.file)}
+                                        onShare={(to) => handleShare(token.id, to)}
                                         onTransfer={(to) => handleTransfer(token.id, to)}
                                         onDelete={() => handleDelete(token.id)}
                                         nftNumber={token.id}

@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0xfD053150831BaEEfc80A9A707272EF483EC01696';
+export const contractAddress = '0x073132273C10C9057e81816Ae56fa8c407a5b681';
 
 async function initializeProviderAndSigner() {
 	try {
@@ -16,7 +16,7 @@ async function initializeProviderAndSigner() {
 
 			// Retrieve the signer (current account)
 			const signer = await provider.getSigner();
-			console.log('Signer Address:', await signer.getAddress());
+			// console.log('Signer Address:', await signer.getAddress());
 
 			// Now the `provider` and `signer` are available for use
 			return { provider, signer };
@@ -58,9 +58,9 @@ export async function getAccount(): Promise<string | null> {
 }
 
 
-// Define a type for the token details to improve readability and maintainability
+//  token details to improve readability and maintainability
 export interface TokenDetails {
-	tokenId: number;  // or number, depending on how token IDs are handled in your contract
+	tokenId: number;
 	cidHash: string;
 };
 
@@ -89,17 +89,12 @@ export async function mintToken(cidHash: string): Promise<TokenDetails> {
 		const tokenMintedEvent = await getEvent(txResponse, 'TokenMinted');
 		if (!tokenMintedEvent) throw new Error('TokenMinted event not found.');
 
-		/**
-		 * The `tokenId` and `cidHashOutput=cidHash` variables are used to optimize how the gallery updates after the minting process.
-		 * Once the token is minted, it will be displayed directly in the gallery without the need to invoke a function on the contract to update the display.
-		 */
 
-		const tokenId: number = Number(tokenMintedEvent.args[0]); // Convert from BigNumber if needed
-		const cidHashOutput: string = tokenMintedEvent.args[1];
+		const tokenId: number = Number(tokenMintedEvent.args[0]);
 
-		return { tokenId: tokenId, cidHash: cidHashOutput }; // Return as a structured object
+		return { tokenId: tokenId, cidHash: cidHash };
 	} catch (error) {
-		console.error('Error minting token:', error);
+		console.error('Error in contract.mintToken:', error);
 		throw error;
 	}
 }
@@ -110,7 +105,7 @@ export async function mintToken(cidHash: string): Promise<TokenDetails> {
  *
  * @param start The starting index to fetch tokens.
  * @param count The number of tokens to fetch starting from the `start` index.
- * @returns An array of `TokenDetails` containing token IDs and their URIs.
+ * @returns An array of `TokenDetails` containing token IDs and their cidHashs.
  */
 export async function getTokensInRange(start: number, count: number): Promise<TokenDetails[]> {
 	try {
@@ -120,11 +115,11 @@ export async function getTokensInRange(start: number, count: number): Promise<To
 		// Call the smart contract to fetch tokens in this range
 		const result = await contract.getTokensInRange(start, end);
 
-		// Expect result to be an array of arrays: [token IDs, URIs]
+		// Expect result to be an array of arrays: [token IDs, cidHashs]
 		const tokenIds: number[] = result[0];
 		const cidHashs: string[] = result[1];
 
-		// Map token IDs to their corresponding URIs to form an array of TokenDetails
+		// Map token IDs to their corresponding cidHashs to form an array of TokenDetails
 		const tokens: TokenDetails[] = tokenIds.map((tokenId, index) => ({
 			tokenId,
 			cidHash: cidHashs[index]
@@ -132,19 +127,40 @@ export async function getTokensInRange(start: number, count: number): Promise<To
 
 		return tokens;
 	} catch (error) {
-		console.error('Error fetching tokens:', error);
+		console.error('Error contract.getTokensInRange:', error);
 		return [];
 	}
 }
 
+export async function getSharedTokensInRange(start: number, count: number): Promise<TokenDetails[]> {
+	try {
+		// Calculate the end index based on the start index and the number of tokens to fetch
+		const end = start + count;
 
+		// Call the smart contract to fetch shared tokens within the specified range
+		const result = await contract.getSharedTokensInRange(start, end);
 
+		// Expect result to be an array of arrays: [token IDs, cidHashs]
+		const tokenIds: number[] = result[0];
+		const cidHashs: string[] = result[1];
 
-export async function transferToken(to: string, tokenId: number): Promise<Boolean> {
+		// Map token IDs to their corresponding CID hashes to create an array of TokenDetails
+		const tokens: TokenDetails[] = tokenIds.map((tokenId, index) => ({
+			tokenId,
+			cidHash: cidHashs[index]
+		}));
+
+		return tokens;
+	} catch (error) {
+		console.error('Error in fetching shared tokens:', error);
+		return [];
+	}
+}
+
+export async function transferToken(tokenId: number, to: string, ): Promise<Boolean> {
 	try {
 		// Call the contract's transferToken function
-		const tx = await contract.transferToken(to, tokenId);
-		console.log('Transaction hash:', tx.hash);
+		const tx = await contract.transferToken(tokenId, to);
 
 		// Wait for transaction confirmation
 		await tx.wait();
@@ -157,33 +173,32 @@ export async function transferToken(to: string, tokenId: number): Promise<Boolea
 }
 
 
-// /**
-//  * Shares a token with multiple recipients.
-//  *
-//  * @param to An array of recipient addresses to share the token with.
-//  * @param tokenId The ID of the token to be shared.
-//  * @returns `true` if the transaction succeeds, `false` otherwise.
-//  */
-// export async function shareToken(to: string[], tokenId: number): Promise<boolean> {
-// 	try {
-// 		// Ensure the array is not empty
-// 		if (to.length === 0) {
-// 			throw new Error('Recipient list cannot be empty.');
-// 		}
+/**
+ * Shares a token with multiple recipients.
+ *
+ * @param to An array of recipient addresses to share the token with.
+ * @param tokenId The ID of the token to be shared.
+ * @returns `true` if the transaction succeeds, `false` otherwise.
+ */
+export async function shareToken(to: string, tokenId: number): Promise<boolean> {
+	try {
+		// Ensure the array is not empty
+		if (to.length === 0) {
+			throw new Error('Recipient list cannot be empty.');
+		}
 
-// 		// Call the contract's `shareToken` function with the array of addresses
-// 		const tx = await contract.shareToken(tokenId, to);
-// 		console.log('Transaction hash:', tx.hash);
+		// Call the contract's `shareToken` function with the array of addresses
+		const tx = await contract.shareToken(tokenId, to);
 
-// 		// Wait for the transaction to confirm
-// 		await tx.wait();
+		// Wait for the transaction to confirm
+		await tx.wait();
 
-// 		return true;
-// 	} catch (error) {
-// 		console.error('Error sharing token:', error);
-// 		return false;
-// 	}
-// }
+		return true;
+	} catch (error) {
+		console.error('Error contract.shareToken:', error);
+		return false;
+	}
+}
 
 
 
@@ -198,19 +213,16 @@ export async function burnToken(tokenId: number): Promise<Boolean> {
 
 		return true;
 	} catch (error) {
-		console.error('Error burning token:', error);
+		console.error('Error contract.burnToken :', error);
 		return false;
 	}
 }
-
 
 
 export async function getSupply(): Promise<number> {
 	try {
 		const totalNFTs = await contract.getSupply();
 
-		// Output the total number of NFTs
-		console.log(`Total NFTs: ${totalNFTs.toString()}`);
 		return Number(totalNFTs);
 	} catch (error) {
 		console.error("Failed to fetch the total number of NFTs:", error);
@@ -222,21 +234,21 @@ export async function getSupply(): Promise<number> {
 export async function tokenOf(
 	publicKey: Uint8Array | undefined,
 	signature: string | undefined,
-	nftEncryptionKey: Uint8Array[]
+	encryptedFileKey: Uint8Array[],
+	tokenId: number
 ): Promise<string[]> {
 
 	try {
-		const data = await contract.tokenOf(publicKey, signature, nftEncryptionKey);
+		const data = await contract.tokenOf(publicKey, signature, encryptedFileKey, tokenId);
 
-		console.log('Reencrypted key component:', data);
 		if (!data) {
-			console.error('No data for the reencrypted key component.');
+			console.error('No return for contract.tokenOf');
 			return [];
 		}
 
 		return data;
 	} catch (error) {
-		console.error('Error fetching data from the contract:', error);
+		console.error('Error fetching contract.tokenOf :', error);
 		return [];
 	}
 }

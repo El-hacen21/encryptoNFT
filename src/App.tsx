@@ -80,7 +80,7 @@ function App() {
         <Mint />
         <Gallery />
 
-        <Footer githubUrl='diallo' />
+        <Footer githubUrl='https://github.com/El-hacen21/zama_bounty/' />
       </div>
 
     </Router>
