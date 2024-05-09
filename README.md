@@ -1,32 +1,4 @@
-# fhevmjs-react-template
-
-This is a simple template to show how to use fhevmjs with Vite + React.
-
-## Getting started
-
-```bash
-npm install
-```
-
-## Development
-
-```bash
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Documentation
-
-For more information about fhevmjs, you can [read the documentation](https://docs.zama.ai/fhevm).
-
-
-
-# Documentation du projet NFT pour contenu sécurisé
+# Documentation du projet NFT pour contrôle d'accès à du contenu confidentiel
 
 Ce document fournit une vue d'ensemble du processus de création, de gestion et d'accès aux NFTs qui sécurisent l'accès à des contenus secrets.
 
@@ -35,18 +7,21 @@ Ce document fournit une vue d'ensemble du processus de création, de gestion et 
 ### Processus de création et d'encryption
 
 1. **Upload et Encryption du Contenu** :
-    - La Créatrice upload un contenu secret. `EncryptThenMint` dans Mint.tsx s'exécute automatiquement aprés upload d'un fichier. 
+    - La Créatrice uploade un contenu secret (`file`) dans l'interface. Cet upload appelle `EncryptThenMint` dans Mint.tsx, qui réalise automatiquement toutes les opérations suivantes. 
     - Une clé d'encryption symétrique (`fileKey`) est générée.
-    - Le `fileKey` est chiffré en plusieurs parties `encryptedFileKey` par l'instance de la fhEVM dans la fonction `fileKeyEncryption`, qui est appliquée après `getSignature(contractAddress, account)`, définie dans fhevmjs.ts. Cette fonction permet de générer des identifiants pour l'instance.
-    - Le fichier est encrypté symétriquement pour produire `ciphFile` 
-    - Ensuite `encryptedFileKey` est rajouter  dans les  métadonnées  du `ciphFile` pour donner `ecryptedFile`.
+    - Le fichier est encrypté symétriquement pour produire le ciphertext: ciphFile<--AES-CTR(fileKey,file)
+// _Il va être rendu publiquement accessible sur IPFS, donc on voit que contrôler l'accès au contenu en clair_ `file` _équivaut à contrôler l'accès à la_ `fileKey`.
+    - Le `fileKey` est chiffrée en un ciphertext: `encryptedFileKey` par l'instance de la fhEVM. // _C'est fait dans la fonction_ `fileKeyEncryption`.
+    - Ensuite `encryptedFileKey` est ajoutée aux métadonnées du `ciphFile`, pour donner:
+      
+      `encryptedFile` <-- (`ciphFile`|`encryptedFileKey`).
 
 2. **Stockage sur IPFS** :
-    - `ecryptedFile` est uploadé sur IPFS (pour tester l'application if faut un noued local ipf et mettre à jour IPFSConfig dans config.ts ), et le `cidHash` (identifiant unique du fichier sur IPFS) est récupéré et utilisé comme métadonnée essentielle du NFT.
+    - `encryptedFile` est uploadé sur IPFS (pour tester l'application if faut un noeud local ipf et mettre à jour IPFSConfig dans config.ts ), et le `cidHash` (identifiant unique du fichier sur IPFS) est récupéré et utilisé comme métadonnée essentielle du NFT.
 
 
 3. **Mintage du NFT** :
-    - Un NFT est un compressé contenant `cidHash` comme référence au `ecryptedFile`. La fonction `mintToken(cidHash)` dans `contract.ts` s'occupe de cette opération. 
+    - Un NFT est un compressé contenant `cidHash` comme référence au `encryptedFile`. La fonction `mintToken(cidHash)` dans `contract.ts` s'occupe de cette opération. 
 
 ## II. Gestion du NFT
 
@@ -60,9 +35,12 @@ Ce document fournit une vue d'ensemble du processus de création, de gestion et 
     - La fonction `Send` permettra d'envoyer un NFT à un autre compte: pas encore fait!
 
 ## III. Accès au contenu en clair par un Bénéficiaire
-
+C'est réalisé automatiquement par la fonction displayGallery dans Gallery.tsx, qui fait toutes les étapes suivantes.
 1. **Génération de la Clé Publique** :
-    - Le Bénéficiaire génère une clé publique (`reencryption`).
+    - Le Bénéficiaire a besoin de recevoir `fileKey` sous format chiffré sous une clé qu'il possède.
+      Il génère donc une clé publique, appelée `reencryption`, grâce à la fonction `getSignature(contractAddress, account)`, définie dans fhevmjs.ts.
+      // Cette syntaxe étrange s'explique par le fait que la clé publique s'accompagne d'une signature sur elle-même, i.e., `reencryption`=(`public key`, `signature`).
+    - Enfin il appelle `reencryption` de `encryptedFile` vers sa `public key`.
 
 2. **Processus de Décryption** :
     - Réencryption de `encryptedFileKey` avec la clé publique pour obtenir `reEncryptedFileKey`.
