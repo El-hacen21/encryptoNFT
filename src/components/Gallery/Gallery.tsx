@@ -110,7 +110,7 @@ export const Gallery = () => {
             const reencryption = await getSignature(contract.contractAddress, account);
 
             const updatedNFTs = await Promise.all(myNFTs.map(async (token) => {
-                const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
+                const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
                 return {
                     id: Number(token.tokenId),
                     file: decryptedFile.file
@@ -147,7 +147,7 @@ export const Gallery = () => {
             const reencryption = await getSignature(contract.contractAddress, account);
 
             const updatedTokens = await Promise.all(nftsSharedWithMe.map(async (token) => {
-                const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
+                const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
                 return {
                     id: Number(token.tokenId),
                     file: decryptedFile.file
@@ -164,7 +164,7 @@ export const Gallery = () => {
 
 
 
-    const reEncryptedFileKey = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
+    const accessFile = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
         if (!instance) throw new Error("Intance retrieval failed.");
 
         const encryptedFile = await getEncryptedFileCidHash(cidHash);
@@ -172,10 +172,10 @@ export const Gallery = () => {
 
         const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
-        const data = await contract.tokenOf(publicKey, signature, encryptedKeys, tokenId);
+        const reEncryptedFileKey = await contract.tokenOf(publicKey, signature, encryptedKeys, tokenId);
         let decryptedKey: bigint[] = [];
 
-        data.forEach((element) => {
+        reEncryptedFileKey.forEach((element) => {
             if (element) {
                 const result = instance.decrypt(contract.contractAddress, element);
                 decryptedKey.push(result);
