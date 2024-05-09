@@ -119,6 +119,11 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         return ownerTokens[msg.sender].length();
     }
 
+    // Function to retrieve the number of tokens shared with the caller
+    function getSharedWithSupply() external view returns (uint256) {
+        return sharedTokens[msg.sender].length();
+    }
+
     // Public function to get a list of tokens with pagination
     function getTokensInRange(uint256 start, uint256 end)
         external
@@ -157,7 +162,10 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     }
 
     // function to revoke all shared access for a token
-    function revokeAllSharedAccess(uint256 tokenId) public onlyTokenOwner(tokenId)  {
+    function revokeAllSharedAccess(uint256 tokenId)
+        public
+        onlyTokenOwner(tokenId)
+    {
         uint256 numberOfUsers = tokenSharedWithUsers[tokenId].length();
         for (uint256 i = 0; i < numberOfUsers; i++) {
             address user = tokenSharedWithUsers[tokenId].at(i);
@@ -172,11 +180,11 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     function burnToken(uint256 tokenId) public onlyTokenOwner(tokenId) {
         _burn(tokenId);
 
-        // Remove the token from the owner's set of tokens
-        ownerTokens[msg.sender].remove(tokenId);
-
         // Revoke all shared accesses and remove token from sharedTokens for each user who had access
         revokeAllSharedAccess(tokenId);
+
+        // Remove the token from the owner's set of tokens
+        ownerTokens[msg.sender].remove(tokenId);
     }
 
     // Function for re-encrypting the NFT encryption key before calling instance.decrypt locally
@@ -211,6 +219,27 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         }
 
         return reEncryptedKeyParts;
+    }
+
+    // Modifier to check token ownership
+    modifier onlyTokenOwnerOrSharedWith(
+        uint256 tokenId,
+        bytes32 publicKey,
+        bytes memory signature
+    ) {
+        // bytes32 digest = _hashTypedDataV4(
+        //     keccak256(
+        //         abi.encode(keccak256("Reencrypt(bytes32 publicKey)"), publicKey)
+        //     )
+        // );
+
+        // address signer = ECDSA.recover(digest, signature);
+        require(
+            ownerOf(tokenId) == msg.sender || sharedAccess[tokenId][msg.sender],
+            // sharedAccess[tokenId][signer],
+            "Caller is neither owner nor authorized."
+        );
+        _;
     }
 
     // Modifier to check token ownership

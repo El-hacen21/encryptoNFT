@@ -6,26 +6,6 @@
     justify-content: center;
 }
 
-/* .gallery-container .card:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.card-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.card-actions button {
-    margin: 0 5px;
-}
-
-.card-img-top {
-    max-width: 10%;
-    height: auto;
-    max-height: 100px;
-} */
-
 .gallery-header {
     text-align: center;
     font-size: 2.5rem;
@@ -97,7 +77,6 @@ th {
 td {
     height: auto;
     vertical-align: middle;
-
 }
 
 td img {
@@ -118,13 +97,27 @@ td .button-icon svg {
 }
 
 
-td.size {
+th.size {
     font-size: small;
+    width: 20%;
+}
+
+th.nft-num {
+    font-size: small;
+    width: 20%;
+}
+
+th.name {
+    font-size: small;
+    width: 50%;
 }
 
 th.actions {
-    width: 100px;
+    width: 10%;
+    padding: 0 0px;
 }
+
+
 
 
 /* Specific Button Colors */
@@ -171,4 +164,21 @@ tr:hover {
     text-align: center;
     font-weight: bold;
     padding: 10px;
+}
+
+.icon-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 16px; /* Adjust size as needed */
+    color: #000; /* Adjust the icon color */
+}
+
+.icon-button:hover {
+    color: #007bff; /* Hover color */
+}
+
+.icon-button:focus {
+    outline: none;
 }

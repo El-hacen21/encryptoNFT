@@ -2,61 +2,66 @@ import './Gallery.css'
 import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper } from './Helpers';
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
-import { burnToken, getTokensInRange, transferToken, tokenOf, getAccount, contractAddress, getSupply, shareToken } from '../Blockchain/contract';
-import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData} from '../Utils/utils'
+import * as contract from '../Blockchain/contract';
+import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData } from '../Utils/utils'
 import { deserializeEncryptedKeyParts } from '../Utils/other'
 import { importCryptoKey } from '../Utils/keyencrypt'
 import { useFhevm } from '../Contexts/FhevmContext';
-import { useNFTs } from '../Contexts/NFTContext';
+import { useNFTs, NFTContent } from '../Contexts/NFTContext';
 import { toast } from 'react-toastify'
-import { ArrowClockwise } from 'react-bootstrap-icons';
+import { ArrowClockwise, Download } from 'react-bootstrap-icons';
 import { getSignature } from '../../fhevmjs';
 
 export const Gallery = () => {
     const [page, setPage] = useState(0);
     const { instance, createInstance } = useFhevm();
-    const [totalItems, setTotalItems] = useState(0);
+    const [myTotalNFTs, setMyTotalNFTs] = useState(0);
+    const [totalNFTsSharedWithMe, setTotalNFTsSharedWithMe] = useState(0);
 
-    const itemsPerPage = 10; // Cannot be zero
-    const [showTable, setShowTable] = useState(false);
+    const ITEMS_PERPAGE = 5; // Cannot be zero
+
+    const [showGallery, setShowGallery] = useState(false);
     const { nfts, removeNFT, updateNFTs } = useNFTs();
+
+    const [nftsSharedWithMe, setNFTsSharedWithMe] = useState<NFTContent[]>([]);
+
 
 
     const handleShare = async (tokenId: number, to: string) => {
-        const response = await shareToken(to, tokenId);
+        const response = await contract.shareToken(to, tokenId);
 
         if (response) {
-            toast.success("The NFT has been sent and will be no more accessible!");
+            toast.success(`The NFT#${tokenId} has been share with : ${to}`);
 
         } else {
-            toast.error("Could not send the NFT!");
+            toast.error(`Could not send the NFT#${tokenId}!`);
         }
     };
 
     const handleTransfer = async (tokenId: number, to: string) => {
-        const response = await transferToken(tokenId, to);
+        const response = await contract.transferToken(tokenId, to);
 
         if (response) {
-            toast.success("The NFT has been transfered and will be no more accessible!");
+            toast.success(`The NFT#${tokenId} has been transfered and will be no more accessible!`);
 
-            //Update the gallery display
+            // Update the gallery display
             removeNFT(tokenId);
         } else {
-            toast.error("Could not transfer the NFT!");
+            toast.error(`Could not transfer the NFT#${tokenId}!`);
         }
     };
 
 
     const handleDelete = async (tokenId: number) => {
-        const response = await burnToken(tokenId);
+        const response = await contract.burnToken(tokenId);
 
         if (response) {
-            toast.success("The NFT has been deleted and will be no more accessible!");
+            toast.success(`The NFT#${tokenId} has been deleted and will be no more accessible!`);
 
             //Update the gallery display
             removeNFT(tokenId);
         } else {
-            toast.error("Could not delete the NFT!");
+            toast.error(`Could not delete the NFT#${tokenId}!`);
         }
 
     };
@@ -68,14 +73,18 @@ export const Gallery = () => {
     }, [instance, createInstance, page]);
 
 
-
     const displayGallery = async (): Promise<void> => {
+        setShowGallery(true);
         if (nfts) {
-            setShowTable(true);
+            displayMyNFTs();
         } else {
             toast.info('You have no NFTs to display!');
             return;
         }
+        displaySharedWithMeNFTs();
+    }
+
+    const displayMyNFTs = async (): Promise<void> => {
 
         if (!instance) {
             console.error('Instance is not ready');
@@ -84,23 +93,23 @@ export const Gallery = () => {
 
         try {
             // Fetch total number of NFTs to manage pagination or UI elements
-            const total = await getSupply();
-            setTotalItems(total);
+            const total = await contract.getSupply();
+            setMyTotalNFTs(total);
 
             if (total <= 0) {
                 toast.info('You have no NFTs to display!');
                 return;
             }
 
-            // Fetch and process NFTs
-            const tokensFromContract = await getTokensInRange(0, 5); // Adjust the pagination as needed
+            // Fetch My tokens
+            const myNFTs = await contract.getTokensInRange(0, 5); // Adjust the pagination as needed
 
-            const account = await getAccount();
+            const account = await contract.getAccount();
             if (!account) throw new Error("Account retrieval failed.");
 
-            const reencryption = await getSignature(contractAddress, account);
+            const reencryption = await getSignature(contract.contractAddress, account);
 
-            const updatedTokens = await Promise.all(tokensFromContract.map(async (token) => {
+            const updatedNFTs = await Promise.all(myNFTs.map(async (token) => {
                 const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
                 return {
                     id: Number(token.tokenId),
@@ -109,13 +118,50 @@ export const Gallery = () => {
             }));
 
             // Update context with new tokens
-            updateNFTs(updatedTokens);
+            updateNFTs(updatedNFTs);
             toast.success('Gallery updated successfully!');
-            console.log("updatedTokens :: ", updatedTokens);
+            // console.log("updatedTokens :: ", updatedNFTs);
+
         } catch (error) {
             console.error("Error during NFT fetch or decryption:", error);
         }
     };
+
+
+    const displaySharedWithMeNFTs = async (): Promise<void> => {
+
+        try {
+            const totalShareWith = await contract.getSharedWithSupply();
+            setTotalNFTsSharedWithMe(totalShareWith);
+
+            if (totalShareWith <= 0) {
+                toast.info('You have no NFTs shared with you to display!');
+                return;
+            }
+
+            const nftsSharedWithMe = await contract.getSharedTokensInRange(0, totalShareWith);
+
+            const account = await contract.getAccount();
+            if (!account) throw new Error("Account retrieval failed.");
+
+            const reencryption = await getSignature(contract.contractAddress, account);
+
+            const updatedTokens = await Promise.all(nftsSharedWithMe.map(async (token) => {
+                const decryptedFile = await reEncryptedFileKey(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
+                return {
+                    id: Number(token.tokenId),
+                    file: decryptedFile.file
+                };
+            }));
+
+            setNFTsSharedWithMe(updatedTokens);
+            toast.success('Shared NFTs updated successfully!');
+
+        } catch (error) {
+            console.error("Error during NFT fetch or decryption:", error);
+        }
+    };
+
 
 
     const reEncryptedFileKey = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
@@ -126,12 +172,12 @@ export const Gallery = () => {
 
         const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
-        const data = await tokenOf(publicKey, signature, encryptedKeys, tokenId);
+        const data = await contract.tokenOf(publicKey, signature, encryptedKeys, tokenId);
         let decryptedKey: bigint[] = [];
 
         data.forEach((element) => {
             if (element) {
-                const result = instance.decrypt(contractAddress, element);
+                const result = instance.decrypt(contract.contractAddress, element);
                 decryptedKey.push(result);
             }
         });
@@ -154,10 +200,10 @@ export const Gallery = () => {
 
 
             </Row>
-            {!showTable && (
+            {!showGallery && (
                 <Row>
                     <Col className="d-flex justify-content-center">
-                        <Button className="modern-button" onClick={displayGallery}
+                        <Button className="modern-button" onClick={() => displayGallery()}
                         >
                             Show Private Content
                         </Button>
@@ -166,57 +212,103 @@ export const Gallery = () => {
             )}
 
 
-            {showTable && (
-
-                <Table striped hover>
-                    <thead>
-                        <tr>
-                            <th>NFT #</th>
-                            <th >Name</th>
-                            <th>Size</th>
-                            <th className="actions">
-                                <button
-                                    onClick={() => displayGallery()}
-                                    title="Refresh Gallery"
-                                    className="icon-button" // Custom CSS class
-                                >
-                                    <ArrowClockwise />
-                                </button>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {nfts.map(token => (
-                            <tr key={token.id}>
-                                <td>{token.id}</td>
-
-                                <td>{getFileIcon(token.file.type)} {"  "}  {token.file.name}</td>
-                                <td className="size">{formatFileSize(token.file.size)}</td>
-                                <td>
-                                    <ActionButtonHelper
-                                        onDownload={() => downloadFile(token.file)}
-                                        onShare={(to) => handleShare(token.id, to)}
-                                        onTransfer={(to) => handleTransfer(token.id, to)}
-                                        onDelete={() => handleDelete(token.id)}
-                                        nftNumber={token.id}
-                                    />
-
-                                </td>
+            {showGallery && (
+                <div>
+                    <Table striped hover>
+                        <thead>
+                            <tr>
+                                <th className="nft-num">NFT #</th>
+                                <th className="name">Name</th>
+                                <th className="size">Size</th>
+                                <th className="actions">
+                                    <button
+                                        onClick={() => displayMyNFTs()}
+                                        title="Refresh Gallery"
+                                        className="icon-button" // Custom CSS class
+                                    >
+                                        <ArrowClockwise />
+                                    </button>
+                                </th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            {/* Your NFTs data */}
+                            {nfts.map(token => (
+                                <tr key={token.id}>
+                                    <td>{token.id}</td>
+                                    <td>{getFileIcon(token.file.type)} {token.file.name}</td>
+                                    <td >{formatFileSize(token.file.size)}</td>
+                                    <td >
+                                        {/* Action button */}
+                                        <ActionButtonHelper
+                                            onDownload={() => downloadFile(token.file)}
+                                            onShare={(to) => handleShare(token.id, to)}
+                                            onTransfer={(to) => handleTransfer(token.id, to)}
+                                            onDelete={() => handleDelete(token.id)}
+                                            nftNumber={token.id}
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
 
+                    <Pagination className="justify-content-center mt-4">
+                        {[...Array(Math.ceil(myTotalNFTs / ITEMS_PERPAGE)).keys()].map(number => (
+                            <Pagination.Item key={number} active={number + 1 === page} onClick={() => setPage(number + 1)}>
+                                {number + 1}
+                            </Pagination.Item>
                         ))}
-                    </tbody>
-                </Table>
-            )}
+                    </Pagination>
 
-            <Pagination className="justify-content-center mt-4">
-                {[...Array(Math.ceil(totalItems / itemsPerPage)).keys()].map(number => (
-                    <Pagination.Item key={number} active={number + 1 === page} onClick={() => setPage(number + 1)}>
-                        {number + 1}
-                    </Pagination.Item>
-                ))}
-            </Pagination>
-        </Container>
+                    <h3 className='shared-separator'>NFTs Shared With Me</h3>
+                    <Table striped hover>
+                        {/* Reusing the <thead> section */}
+                        <thead>
+                            <tr>
+                                <th className="nft-num"></th>
+                                <th className="name"></th>
+                                <th className="size"></th>
+                                <th className="actions">
+                                    <button
+                                        onClick={() => displaySharedWithMeNFTs()}
+                                        title="Refresh Gallery"
+                                        className="icon-button" // Custom CSS class
+                                    >
+                                        <ArrowClockwise />
+                                    </button>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {/* NFTs shared with you data */}
+                            {nftsSharedWithMe.map(token => (
+                                <tr key={token.id}>
+                                    <td>{token.id}</td>
+                                    <td>{getFileIcon(token.file.type)} {token.file.name}</td>
+                                    <td >{formatFileSize(token.file.size)}</td>
+                                    <td >
+                                        <Download onClick={() => downloadFile(token.file)} />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+
+                    <Pagination className="justify-content-center mt-4">
+                        {[...Array(Math.ceil(totalNFTsSharedWithMe / ITEMS_PERPAGE)).keys()].map(number => (
+                            <Pagination.Item key={number} active={number + 1 === page} onClick={() => setPage(number + 1)}>
+                                {number + 1}
+                            </Pagination.Item>
+                        ))}
+                    </Pagination>
+                </div>
+
+            )
+            }
+
+
+        </Container >
 
     );
 };

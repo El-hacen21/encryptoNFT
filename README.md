@@ -81,3 +81,11 @@ Ce document fournit une vue d'ensemble du processus de création, de gestion et 
 1. Masquer l'ownership d'une adresse dans un smart contract : Utiliser `mapping(address => uint256[]) private ownerTokens` dans `contract.sol` ne cache pas complètement l'ownership car msg.sender est toujours visible sur la blockchain, et nous ne sommes pas certains que cela résout le problème de suivi de l'ownership des NFTs cryptés. La solution idéale serait d'appliquer un Zero-Knowledge Proof (ZKP) à l'account, mais nous ne sommes pas certains de pouvoir l'implémenter.
 
 2. `instance.getSignature` est appelée dans la galerie pour afficher la liste des NFTs. Serait-il mieux de l'enregistrer localement pour d'autres utilisations ? Auriez-vous des idées ?"
+
+
+## Credits
+
+* The frontend design of this project was adapted from
+https://github.com/judygab/web-dev-projects/tree/main/personal-portfolio
+
+* smart contracts were implemented using TFHE by zama https://github.com/zama-ai/fhevm

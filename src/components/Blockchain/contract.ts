@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0x073132273C10C9057e81816Ae56fa8c407a5b681';
+export const contractAddress = '0xd0fd91FA1909BF2408e669880e3aA6d2b416a250';
 
 async function initializeProviderAndSigner() {
 	try {
@@ -157,7 +157,7 @@ export async function getSharedTokensInRange(start: number, count: number): Prom
 	}
 }
 
-export async function transferToken(tokenId: number, to: string, ): Promise<Boolean> {
+export async function transferToken(tokenId: number, to: string,): Promise<Boolean> {
 	try {
 		// Call the contract's transferToken function
 		const tx = await contract.transferToken(tokenId, to);
@@ -229,6 +229,19 @@ export async function getSupply(): Promise<number> {
 		throw error;
 	}
 };
+
+
+export async function getSharedWithSupply(): Promise<number> {
+	try {
+		const totalSharedWithNFTs = await contract.getSharedWithSupply();
+
+		return Number(totalSharedWithNFTs);
+	} catch (error) {
+		console.error("Failed to fetch the total number of NFTs shared: ", error);
+		throw error;
+	}
+};
+
 
 
 export async function tokenOf(
