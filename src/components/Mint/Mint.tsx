@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import uploadIcon from "../../assets/img/upload-icon.jpg";
 import { useFhevm } from '../Contexts/FhevmContext';
 import { mintToken, getAccount } from '../Blockchain/contract'
-import { generateKey } from '../Utils/keyencrypt'
+import { exportCryptoKey, generateKey } from '../Utils/keyencrypt'
 import { useNFTs, NFTContent } from '../Contexts/NFTContext';
-import { fileKeyEncryption, encryptFile, uploadFileToIPFS } from '../Utils/utils'
+import { encryptFile, uploadFileToIPFS } from '../Utils/utils'
 import { toast } from 'react-toastify'
 
 
@@ -44,7 +44,7 @@ export const Mint = () => {
       if (!account) throw new Error("Account retrieval failed.");
       if (!instance) throw new Error("Intance retrieval failed.");
 
-      const encryptedFileKey = await fileKeyEncryption(fileKey, instance);
+      const encryptedFileKey = await fileKeyEncryption(fileKey);
       const ciphFile = await encryptFile(file, fileKey);
 
       const encryptedFile = { ...ciphFile, encryptedFileKey };
@@ -67,7 +67,19 @@ export const Mint = () => {
     }
   };
 
-
+  const fileKeyEncryption = async (fileKey: CryptoKey): Promise<Uint8Array[]> => {
+    if (!instance) throw new Error("Intance retrieval failed.");
+    const encryptedFileKey: Uint8Array[] = [];
+  
+    const keySegments = await exportCryptoKey(fileKey);
+    for (const segment of keySegments) {
+      const encrypted = instance.encrypt64(segment);
+      encryptedFileKey.push(encrypted);
+    }
+  
+    return encryptedFileKey;
+  };
+  
 
   
   useEffect(() => {

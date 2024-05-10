@@ -1,10 +1,8 @@
 
 import { convertCounterObjectToUint8Array, readFileAsArrayBuffer, arrayBufferToFile, base64ToArrayBuffer, bufferToBase64 } from './other';
-import { encryptionAlgorithm, exportCryptoKey } from './keyencrypt'
+import { encryptionAlgorithm } from './keyencrypt'
 import axios from 'axios';
 import { IPFSConfig } from '../../config';
-import { FhevmInstance } from 'fhevmjs';
-
 
 export interface CiphFile {
   encryptedFileData: string;  // Base64 encoded string
@@ -106,14 +104,12 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
       base64ToArrayBuffer(ciphFile.encryptedMetadata)
     );
 
-    console.log('Encrypted Metadata: ', ciphFile.encryptedMetadata);
+    // console.log('Encrypted Metadata: ', ciphFile.encryptedMetadata);
 
     const decodedMetadataString = new TextDecoder().decode(decryptedMetaData);
     // console.log("Decrypted Metadata String:", decodedMetadataString); 
 
     const decodedMetadata = JSON.parse(decodedMetadataString);
-
-
 
     return {
       file: arrayBufferToFile(decryptedData, decodedMetadata.name, decodedMetadata.type),
@@ -147,7 +143,7 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile) => {
 
     const json = await response.json();
     const hash = json.Hash;
-    console.log(`File uploaded to local IPFS with hash: ${hash}`);
+    // console.log(`File uploaded to local IPFS with hash: ${hash}`);
     return `${IPFSConfig.gatewayURL}/${hash}`;  // Returns the URL via configured gateway
   } catch (error) {
     console.error("Error uploading to IPFS:", error);
@@ -174,15 +170,3 @@ export async function getEncryptedFileCidHash(cidHash: string): Promise<Encrypte
   }
 }
 
-
-export const fileKeyEncryption = async (fileKey: CryptoKey, instance: FhevmInstance): Promise<Uint8Array[]> => {
-  const encryptedFileKey: Uint8Array[] = [];
-
-  const keySegments = await exportCryptoKey(fileKey);
-  for (const segment of keySegments) {
-    const encrypted = instance.encrypt32(segment);
-    encryptedFileKey.push(encrypted);
-  }
-
-  return encryptedFileKey;
-};

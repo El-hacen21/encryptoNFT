@@ -1,5 +1,5 @@
 
-import {bigIntsToBuffer} from './other';
+import { bigIntsToBuffer } from './other';
 
 // Prepare the encryption encryptionAlgorithm specifications
 export const encryptionAlgorithm = {
@@ -42,7 +42,8 @@ export async function importCryptoKey(bigIntKeys: bigint[], keyUsages: KeyUsage[
 }
 
 
-export async function exportCryptoKey(key: CryptoKey): Promise<number[]> {
+
+export async function exportCryptoKey(key: CryptoKey): Promise<bigint[]> {
   // Ensure the key can be exported in the desired format
   const exported = await window.crypto.subtle.exportKey("raw", key);
   const buffer = exported as ArrayBuffer;
@@ -52,13 +53,12 @@ export async function exportCryptoKey(key: CryptoKey): Promise<number[]> {
     throw new Error("Expected key size of 256 bits.");
   }
 
-  // Convert the buffer to a Uint32Array
-  const uint32Array = new Uint32Array(buffer);
-  // Convert the Uint32Array to a regular array of numbers
-  const uintKeys = Array.from(uint32Array);
+  // Convert the buffer to a BigInt64Array
+  const bigInt64Array = new BigInt64Array(buffer);
+  // Convert the BigInt64Array to a regular array of BigInts
+  const bigIntKeys = Array.from(bigInt64Array);
 
-  return uintKeys; // Returns an array of eight 32-bit unsigned integers
+  return bigIntKeys; // Returns an array of four 64-bit BigInts
 }
-
 
 

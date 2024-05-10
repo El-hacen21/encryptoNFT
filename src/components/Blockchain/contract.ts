@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0xd0fd91FA1909BF2408e669880e3aA6d2b416a250';
+export const contractAddress = '0xab451C67f36fE0a238A45549FfFdE9656A15a6e6';
 
 async function initializeProviderAndSigner() {
 	try {

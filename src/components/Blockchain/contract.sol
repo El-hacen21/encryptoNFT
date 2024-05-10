@@ -166,25 +166,28 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         public
         onlyTokenOwner(tokenId)
     {
-        uint256 numberOfUsers = tokenSharedWithUsers[tokenId].length();
+        EnumerableSet.AddressSet storage users = tokenSharedWithUsers[tokenId];
+        uint256 numberOfUsers = users.length();
+
         for (uint256 i = 0; i < numberOfUsers; i++) {
-            address user = tokenSharedWithUsers[tokenId].at(i);
-            sharedAccess[tokenId][user] = false;
+            address user = users.at(i);
             sharedTokens[user].remove(tokenId);
+            sharedAccess[tokenId][user] = false;
         }
-        // Clear the set after removing access
+
+        // Delete the entire set of users
         delete tokenSharedWithUsers[tokenId];
     }
 
     // Function to burn a token owned by the caller
     function burnToken(uint256 tokenId) public onlyTokenOwner(tokenId) {
-        _burn(tokenId);
-
         // Revoke all shared accesses and remove token from sharedTokens for each user who had access
         revokeAllSharedAccess(tokenId);
 
         // Remove the token from the owner's set of tokens
         ownerTokens[msg.sender].remove(tokenId);
+
+        _burn(tokenId);
     }
 
     // Function for re-encrypting the NFT encryption key before calling instance.decrypt locally

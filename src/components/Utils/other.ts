@@ -47,15 +47,18 @@ export function arrayBufferToFile(buffer: ArrayBuffer, filename: string, mimeTyp
 
 
 export function bigIntsToBuffer(bigInts: bigint[]): ArrayBuffer {
-  const buffer = new ArrayBuffer(bigInts.length * 4); // 4 bytes for each 32-bit segment
+  // Each 64-bit integer needs 8 bytes
+  const buffer = new ArrayBuffer(bigInts.length * 8);
   const view = new DataView(buffer);
 
   bigInts.forEach((bigint, index) => {
-    view.setUint32(index * 4, Number(bigint), true); // Assuming little-endian format
+    // Set each bigint as a 64-bit integer; assuming little-endian format
+    view.setBigInt64(index * 8, bigint, true);
   });
 
   return buffer;
 }
+
 
 
 

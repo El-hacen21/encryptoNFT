@@ -31,7 +31,7 @@ export const Gallery = () => {
         const response = await contract.shareToken(to, tokenId);
 
         if (response) {
-            toast.success(`The NFT#${tokenId} has been share with : ${to}`);
+            toast.success(`The NFT#${tokenId} has been share with : ${to.substring(0, 8)}`);
 
         } else {
             toast.error(`Could not send the NFT#${tokenId}!`);
@@ -172,6 +172,7 @@ export const Gallery = () => {
 
         const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
+        
         const reEncryptedFileKey = await contract.tokenOf(publicKey, signature, encryptedKeys, tokenId);
         let decryptedKey: bigint[] = [];
 
@@ -184,7 +185,6 @@ export const Gallery = () => {
 
         const fileKey = await importCryptoKey(decryptedKey);
         const decryptedFile = await decryptFile(encryptedFile, fileKey);
-        console.log("Decrypted file :: : ", decryptedFile);
         return decryptedFile;
     };
 
