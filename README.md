@@ -59,7 +59,7 @@ En détail:
 
 2. **Processus de Décryption** :
     - Réencryption de `encryptedFileKey` avec la clé publique `publicKey` pour obtenir `reEncryptedFileKey`.
-    // _La demande de ré-encryption à la fhEVM est faite par la fonction_ `tokenOf` _dans_ `contract.sol`. _C'est cette fonction qui contrôle l'accès: elle vérifie que l'utilisateur qui l'appelle_ (`msg.sender`) _fait partie de la liste des bénéficiaires_ (`sharedAccess[tokenId]`).
+    // _La demande de ré-encryption à la fhEVM est faite par la fonction_ `reencrypt` _dans_ `contract.sol`. _C'est cette fonction qui contrôle l'accès: elle vérifie que l'utilisateur qui l'appelle_ (`msg.sender`) _fait partie de la liste des bénéficiaires_ (`sharedAccess[tokenId]`).
     - Décryption de `reEncryptedFileKey` avec la secret decryption key du Bénéficiaire pour obtenir la `fileKey`.
     // _C'est fait par l'appel à_ `instance.decrypt`. _Attention: ici l'_ `instance` _en question n'est pas la fhEVM, sinon la décryption serait publique! C'est l'_ `instance` _locale du Bénéficiaire, celle avec laquelle il a généré sa_ `publicKey` _personnelle._
     - Utilisation de `fileKey` pour décrypter `ciphFile`: `file` <-- AES-CTR.Decrypt(`fileKey`,`ciphFile`) et accéder au contenu en clair (`decryptedFile`, égal au `file` créé par la Créatrice).
@@ -74,12 +74,12 @@ En détail:
 ## Projets d'améliorations et obstacles, merci d'avance pour les commentaires!
 
 1. Anonymisation des Bénéficiaires. Nous prévoyons d'ajouter une fonctionalité optionnelle permettant à l'owner du NFT de déclarer des "hidden Bénéficiaires" sous la forme d'une liste de leurs eaddress.
-C'est seulement au moment que le Bénéficiaire a besoin d'accéder au contenu en clair qu'il envoie la requête publique à tokenOf.
-Nous allons donc enrichir tokenOf pour qu'il teste l'égalité de l'adresse faisant la requête (msg.sender) avec chaque eaddress: s'il y a un match, c'est donc que msg.sender était bien un "hidden Bénéficiaire".
+C'est seulement au moment que le Bénéficiaire a besoin d'accéder au contenu en clair qu'il envoie la requête publique à reencrypt.
+Nous allons donc enrichir reencrypt pour qu'il teste l'égalité de l'adresse faisant la requête (msg.sender) avec chaque eaddress: s'il y a un match, c'est donc que msg.sender était bien un "hidden Bénéficiaire".
 Ainsi, pour la grande majorité des Bénéficiaires qui n'ont pas réellement besoin d'accéder au contenu, leur anonymat est préservé.
 
 2. Délégation d'accès à un untrusted broker Bob. Les Bénéficiaires n'ont pas tous envie de se créer un compte Ethereum et d'envoyer une requête à un contrat chaque fois qu'ils veulent accéder à un contenu.
-Nous prévoyons une amélioration permettant à _tout_ Bob d'appeler tokenOf avec une ré-encryption key choisie par Alice. Cependant il faudra donc que tokenOf vérifie que la réencryption key est bien signée par Alice.
+Nous prévoyons une amélioration permettant à _tout_ Bob d'appeler reencrypt avec une ré-encryption key choisie par Alice. Cependant il faudra donc que reencrypt vérifie que la réencryption key est bien signée par Alice.
 Or, nous avons identifié deux gaps dans le SDK actuel avant de pouvoir arriver à une telle vérification. 
 
 3. Un premier gap. L'implémentation actuelle de la fonctionalité de réencryption ne fait pas la vérification que la signature est valide sur la `publicKey`.

@@ -1,6 +1,6 @@
 // FhevmContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { createFhevmInstance, getInstance } from '../../fhevmjs';  // Ensure path correctness
+import { createFhevmInstance, getInstance , getSignature } from '../../fhevmjs';  // Ensure path correctness
 
 import {  FhevmInstance } from 'fhevmjs';
 

@@ -42,6 +42,9 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // as it allows quick enumeration and modification of all users who have access to a specific token.
     mapping(uint256 => EnumerableSet.AddressSet) internal tokenSharedWithUsers;
 
+    // Maps each token ID to its encrypted key hash.
+    mapping(uint256 => bytes32) internal tokenEncryptedKeyHashes;
+
     // Constants for token name and symbol
     string private constant _TOKEN_NAME = "DRMNFT";
     string private constant _TOKEN_SYMBOL = "DRM";
@@ -52,12 +55,16 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     }
 
     // Allows users to mint a new NFT with a specified content identifier hash (CID)
-    function mintToken(string calldata cidHash) external returns (uint256) {
+    function mintToken(string calldata cidHash, bytes32 encryptedKeyHash)
+        external
+        returns (uint256)
+    {
         require(bytes(cidHash).length > 0, "CID cannot be empty.");
         uint256 tokenId = mintedCounter;
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, cidHash);
         ownerTokens[msg.sender].add(tokenId);
+        tokenEncryptedKeyHashes[tokenId] = encryptedKeyHash;
         mintedCounter++;
         emit TokenMinted(tokenId);
         return tokenId;
@@ -187,15 +194,16 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         // Remove the token from the owner's set of tokens
         ownerTokens[msg.sender].remove(tokenId);
 
+        delete tokenEncryptedKeyHashes[tokenId];
+
         _burn(tokenId);
     }
 
-    // Function for re-encrypting the NFT encryption key before calling instance.decrypt locally
-    function tokenOf(
-        bytes32 publicKey,
-        bytes calldata signature,
+    function reencrypt(
+        uint256 tokenId,
         bytes[] calldata encryptedFileKey,
-        uint256 tokenId
+        bytes32 publicKey,
+        bytes memory signature
     )
         public
         view
@@ -208,41 +216,36 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         );
 
         require(
-            encryptedFileKey.length == 8,
-            "The NFT encryption key must be a table of size 8"
+            encryptedFileKey.length == 4,
+            "The NFT encryption key must be a table of size 4"
         );
 
-        // Declaring an array to hold re-encrypted key
-        bytes[] memory reEncryptedKeyParts = new bytes[](8);
+        // Compute the hash of the encrypted file key using keccak256 and aggregate them
+        bytes32 aggregateHash = keccak256(
+            abi.encodePacked(
+                keccak256(encryptedFileKey[0]),
+                keccak256(encryptedFileKey[1]),
+                keccak256(encryptedFileKey[2]),
+                keccak256(encryptedFileKey[3])
+            )
+        );
 
-        // Re-encrypt each key
+        // Compare the computed aggregate hash with the stored hash
+        require(
+            aggregateHash != tokenEncryptedKeyHashes[tokenId],
+            "The provided file key is not correct!"
+        );
+
+        // Declaring an array to hold re-encrypted key parts
+        bytes[] memory reEncryptedKeyParts = new bytes[](4);
+
+        // Re-encrypt each key part
         for (uint256 i = 0; i < encryptedFileKey.length; i++) {
-            euint32 ekey = TFHE.asEuint32(encryptedFileKey[i]);
-            reEncryptedKeyParts[i] = TFHE.reencrypt(ekey, publicKey);
+            euint64 reecryptkey = TFHE.asEuint64(encryptedFileKey[i]);
+            reEncryptedKeyParts[i] = TFHE.reencrypt(reecryptkey, publicKey);
         }
 
         return reEncryptedKeyParts;
-    }
-
-    // Modifier to check token ownership
-    modifier onlyTokenOwnerOrSharedWith(
-        uint256 tokenId,
-        bytes32 publicKey,
-        bytes memory signature
-    ) {
-        // bytes32 digest = _hashTypedDataV4(
-        //     keccak256(
-        //         abi.encode(keccak256("Reencrypt(bytes32 publicKey)"), publicKey)
-        //     )
-        // );
-
-        // address signer = ECDSA.recover(digest, signature);
-        require(
-            ownerOf(tokenId) == msg.sender || sharedAccess[tokenId][msg.sender],
-            // sharedAccess[tokenId][signer],
-            "Caller is neither owner nor authorized."
-        );
-        _;
     }
 
     // Modifier to check token ownership

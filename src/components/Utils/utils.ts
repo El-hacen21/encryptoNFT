@@ -170,3 +170,15 @@ export async function getEncryptedFileCidHash(cidHash: string): Promise<Encrypte
   }
 }
 
+// import * as crypto from 'crypto';
+
+// function generateSHA256(input: string): string {
+//     const hash = crypto.createHash('sha256'); // Create a SHA256 hash object
+//     hash.update(input); // Update hash with data to be hashed
+//     return hash.digest('hex'); // Generate the hash digest in hexadecimal format
+// }
+
+// // Example usage:
+// const myData = "Hello, world!";
+// const hashOutput = generateSHA256(myData);
+// console.log(hashOutput); // Outputs the SHA-256 hash of the input string

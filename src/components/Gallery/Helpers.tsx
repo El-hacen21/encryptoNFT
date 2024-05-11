@@ -1,6 +1,7 @@
 import { FileEarmarkPdf, FileEarmarkImage, FileEarmarkPlay, FileEarmarkWord, FileEarmark, ThreeDotsVertical, } from 'react-bootstrap-icons';
 import React, { useState } from 'react';
 import { Dropdown, OverlayTrigger, Tooltip, Modal, Button, Form } from 'react-bootstrap';
+import { SharedWith } from './SharedWith';
 
 
 
@@ -49,27 +50,47 @@ export function formatFileSize(bytes: number, decimals = 2) {
 interface ActionButtonProps {
     onDownload: () => void;
     onShare: (recipientAddress: string) => void;
+    onSharedWith: (tokenId: number) => void;
     onTransfer: (recipientAddress: string) => void;
     onDelete: () => void;
-    nftNumber?: number;
+    tokenId?: number;
 }
 
-export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, onShare, onTransfer, onDelete, nftNumber = null }) => {
-    const [showModal, setShowModal] = useState(false);
+export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, onShare, onSharedWith, onTransfer, onDelete, tokenId = 0 }) => {
+    const [showCofirmModal, setShowCofirmModal] = useState(false);
+    const [showSharedWithModal, setShowSharedWithModal] = useState(false);
     const [actionType, setActionType] = useState<string>('');
     const [recipientAddress, setRecipientAddress] = useState<string>('');
 
+
     const handleConfirm = (type: string) => {
         setActionType(type);
-        setShowModal(true);
+        setShowCofirmModal(true);
     };
 
     // Perform the desired action after confirmation
     const performAction = () => {
-        setShowModal(false);
+        setShowCofirmModal(false);
         if (actionType === 'Share') {
             onShare(recipientAddress);
-        } else if (actionType === 'Transfer') {
+        }
+        else if (actionType === 'SharedWith') {
+            onSharedWith(tokenId);
+        }
+        else if (actionType === 'Transfer') {
+            onTransfer(recipientAddress);
+        } else if (actionType === 'Delete') {
+            onDelete();
+        }
+    };
+
+    // Perform the desired action after confirmation
+    const handleSharedWith = () => {
+        setShowCofirmModal(false);
+        if (actionType === 'Share') {
+            onShare(recipientAddress);
+        }
+        else if (actionType === 'Transfer') {
             onTransfer(recipientAddress);
         } else if (actionType === 'Delete') {
             onDelete();
@@ -112,6 +133,11 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
                             Share
                         </Dropdown.Item>
                     </OverlayTrigger>
+                    <OverlayTrigger placement="top" overlay={(props) => renderTooltip(props, 'Shared With')}>
+                        <Dropdown.Item onClick={() => onSharedWith(tokenId)}>
+                            Shared With
+                        </Dropdown.Item>
+                    </OverlayTrigger>
                     <OverlayTrigger placement="top" overlay={(props) => renderTooltip(props, 'Transfer')}>
                         <Dropdown.Item onClick={() => handleConfirm('Transfer')}>
                             Transfer
@@ -125,13 +151,15 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
                 </Dropdown.Menu>
             </Dropdown>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <SharedWith tokenId={tokenId} open={showSharedWithModal} onClose={() => setShowSharedWithModal(false)} />
+
+            <Modal show={showCofirmModal} onHide={() => setShowCofirmModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm {actionType}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {nftNumber !== null ? (
-                        <p>Are you sure you want to {actionType.toLowerCase()} NFT #{nftNumber}?</p>
+                    {tokenId !== null ? (
+                        <p>Are you sure you want to {actionType.toLowerCase()} NFT #{tokenId}?</p>
                     ) : (
                         <p>Are you sure you want to {actionType.toLowerCase()} this item?</p>
                     )}
@@ -149,7 +177,7 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                    <Button variant="secondary" onClick={() => setShowCofirmModal(false)}>Cancel</Button>
                     <Button variant='primary' onClick={performAction}>Confirm</Button>
                 </Modal.Footer>
             </Modal>

@@ -11,6 +11,7 @@ import { useNFTs, NFTContent } from '../Contexts/NFTContext';
 import { toast } from 'react-toastify'
 import { ArrowClockwise, Download } from 'react-bootstrap-icons';
 import { getSignature } from '../../fhevmjs';
+import { SharedWith } from './SharedWith';
 
 export const Gallery = () => {
     const [page, setPage] = useState(0);
@@ -25,7 +26,7 @@ export const Gallery = () => {
 
     const [nftsSharedWithMe, setNFTsSharedWithMe] = useState<NFTContent[]>([]);
 
-
+    const [isShareWithModalOpen, setIsShareWithModalOpen] = useState(false);
 
     const handleShare = async (tokenId: number, to: string) => {
         const response = await contract.shareToken(to, tokenId);
@@ -36,6 +37,17 @@ export const Gallery = () => {
         } else {
             toast.error(`Could not send the NFT#${tokenId}!`);
         }
+    };
+
+    const handleSharedWith = async (tokenId: number) => {
+        setIsShareWithModalOpen(true);
+
+        // const response = await contract.shareToken(to, tokenId);
+
+        // if (response) {
+        //     toast.success(`The NFT#${tokenId} has been share with : ${to.substring(0, 8)}`);
+
+        // } else {
     };
 
     const handleTransfer = async (tokenId: number, to: string) => {
@@ -110,7 +122,8 @@ export const Gallery = () => {
             const reencryption = await getSignature(contract.contractAddress, account);
 
             const updatedNFTs = await Promise.all(myNFTs.map(async (token) => {
-                const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
+                const decryptedFile = await accessFile(token.cidHash,
+                    reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
                 return {
                     id: Number(token.tokenId),
                     file: decryptedFile.file
@@ -172,8 +185,8 @@ export const Gallery = () => {
 
         const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
-        
-        const reEncryptedFileKey = await contract.tokenOf(publicKey, signature, encryptedKeys, tokenId);
+
+        const reEncryptedFileKey = await contract.reencrypt(tokenId, encryptedKeys, publicKey, signature);
         let decryptedKey: bigint[] = [];
 
         reEncryptedFileKey.forEach((element) => {
@@ -243,10 +256,12 @@ export const Gallery = () => {
                                         <ActionButtonHelper
                                             onDownload={() => downloadFile(token.file)}
                                             onShare={(to) => handleShare(token.id, to)}
+                                            onSharedWith={() => handleSharedWith(token.id)}
                                             onTransfer={(to) => handleTransfer(token.id, to)}
                                             onDelete={() => handleDelete(token.id)}
-                                            nftNumber={token.id}
+                                            tokenId={token.id}
                                         />
+                                        <SharedWith tokenId={token.id} open={isShareWithModalOpen} onClose={() => setIsShareWithModalOpen(false)} />
                                     </td>
                                 </tr>
                             ))}

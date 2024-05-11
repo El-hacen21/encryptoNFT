@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0xab451C67f36fE0a238A45549FfFdE9656A15a6e6';
+export const contractAddress = '0x393CC68095101d290517E55B88B424A446a93F60';
 
 async function initializeProviderAndSigner() {
 	try {
@@ -82,9 +82,9 @@ async function getEvent(
 	return null;
 }
 
-export async function mintToken(cidHash: string): Promise<TokenDetails> {
+export async function mintToken(cidHash: string, encryptedKeyHash: string): Promise<TokenDetails> {
 	try {
-		const txResponse = await contract.mintToken(cidHash);
+		const txResponse = await contract.mintToken(cidHash, encryptedKeyHash);
 
 		const tokenMintedEvent = await getEvent(txResponse, 'TokenMinted');
 		if (!tokenMintedEvent) throw new Error('TokenMinted event not found.');
@@ -244,24 +244,23 @@ export async function getSharedWithSupply(): Promise<number> {
 
 
 
-export async function tokenOf(
+export async function reencrypt(tokenId: number, encryptedFileKey: Uint8Array[],
 	publicKey: Uint8Array | undefined,
 	signature: string | undefined,
-	encryptedFileKey: Uint8Array[],
-	tokenId: number
+
 ): Promise<string[]> {
 
 	try {
-		const data = await contract.tokenOf(publicKey, signature, encryptedFileKey, tokenId);
+		const data = await contract.reencrypt(tokenId, encryptedFileKey, publicKey, signature);
 
 		if (!data) {
-			console.error('No return for contract.tokenOf');
+			console.error('No return for contract.reencrypt');
 			return [];
 		}
 
 		return data;
 	} catch (error) {
-		console.error('Error fetching contract.tokenOf :', error);
+		console.error('Error fetching contract.reencrypt :', error);
 		return [];
 	}
 }
