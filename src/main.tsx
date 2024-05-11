@@ -13,6 +13,14 @@ if (import.meta.env.MODE !== 'development') {
   // console.error = () => {};
 }
 
+// main.ts or index.ts or App.ts
+import { Buffer as BufferPolyfill } from "buffer/";
+
+// Type assertion
+(window as any).Buffer = BufferPolyfill;
+
+
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <FhevmProvider>
