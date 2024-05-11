@@ -145,20 +145,22 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         return sharedTokens[msg.sender].length();
     }
 
-
     // Function to get a list of all users sharing the given token
-    function getSharedUsers(uint256 tokenId) public view returns (address[] memory) {
+    function getSharedWithAddresses(uint256 tokenId)
+        public
+        view
+        returns (address[] memory)
+    {
         EnumerableSet.AddressSet storage set = tokenSharedWithUsers[tokenId];
         uint256 length = set.length();
         address[] memory users = new address[](length);
-        
+
         for (uint256 i = 0; i < length; ++i) {
             users[i] = set.at(i);
         }
-        
+
         return users;
     }
-
 
     // Function to transfer a token to another address
     function transferToken(uint256 tokenId, address to)
@@ -222,14 +224,9 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     )
         public
         view
-        onlySignedPublicKey(publicKey, signature)
+        onlyAuthorizedSigner(tokenId, publicKey, signature)
         returns (bytes[] memory)
     {
-        require(
-            ownerOf(tokenId) == msg.sender || sharedAccess[tokenId][msg.sender],
-            "Caller is neither owner nor authorized."
-        );
-
         require(
             encryptedFileKey.length == 4,
             "The NFT encryption key must be a table of size 4"
@@ -261,6 +258,24 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         }
 
         return reEncryptedKeyParts;
+    }
+
+    modifier onlyAuthorizedSigner(
+        uint256 tokenId,
+        bytes32 publicKey,
+        bytes memory signature
+    ) {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(keccak256("Reencrypt(bytes32 publicKey)"), publicKey)
+            )
+        );
+        address signer = ECDSA.recover(digest, signature);
+        require(
+            ownerOf(tokenId) == signer || sharedAccess[tokenId][signer],
+            "Caller is neither owner nor authorized."
+        );
+        _;
     }
 
     // Modifier to check token ownership
