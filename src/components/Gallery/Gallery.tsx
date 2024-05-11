@@ -37,6 +37,7 @@ export const Gallery = () => {
     };
 
     const handleSharedWith = async (tokenId: number) => {
+        toast.error(`Handle Shared With NFT#${tokenId} not ready yet`);
         // setIsShareWithModalOpen(true);
 
         // const response = await contract.shareToken(to, tokenId);

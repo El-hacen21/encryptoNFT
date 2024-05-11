@@ -1,44 +1,44 @@
 // Import ethers from ethers.js
-import { ethers } from 'ethers';
+import { ethers, Signer, Contract, BrowserProvider } from 'ethers';
 import contractABI from './ABI.json';
 
 export const contractAddress = '0x393CC68095101d290517E55B88B424A446a93F60';
 
+// Declare global variables for provider, signer, and contract
+let provider: BrowserProvider | null;
+let signer: Signer | null ;
+let contract: Contract | null ;
+
+// Function to initialize provider and signer asynchronously
 async function initializeProviderAndSigner() {
 	try {
-		// Check if the Web3 provider is injected (like MetaMask)
 		if (typeof window.ethereum !== 'undefined') {
-			// Setup the provider using ethers.js provider an Web3
-			const provider = new ethers.BrowserProvider(window.ethereum);
-
-			// Request account access if needed
-			await provider.send("eth_requestAccounts", []);
-
-			// Retrieve the signer (current account)
-			const signer = await provider.getSigner();
-			// console.log('Signer Address:', await signer.getAddress());
-
-			// Now the `provider` and `signer` are available for use
-			return { provider, signer };
+			provider = new ethers.BrowserProvider(window.ethereum);
+			await window.ethereum.request({ method: "eth_requestAccounts" });
+			signer = await provider.getSigner();
+			contract = new ethers.Contract(contractAddress, contractABI, signer);
 		} else {
-			// Handle the case where a Web3 provider is not found
 			console.warn('MetaMask or Web3 provider not found. Please install or enable it.');
+			provider = null;
+			signer = null;
+			contract = null;
 		}
 	} catch (error) {
 		console.error('Error initializing Web3 provider:', error);
+		provider = null;
+		signer = null;
+		contract = null;
 	}
-
-	// Return null to signify the failure to initialize the provider/signer
-	return { provider: null, signer: null };
 }
 
+// Call the function to initialize provider and signer
+initializeProviderAndSigner();
 
-const { provider, signer } = await initializeProviderAndSigner();
 
 
 
 // Create a contract instance with a signer, which enables sending transactions
-const contract = new ethers.Contract(contractAddress, contractABI, signer);
+// const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
 export async function getAccount(): Promise<string | null> {
 	if (provider && signer)
@@ -72,7 +72,7 @@ async function getEvent(
 	const receipt = await tx.wait();
 	if (receipt?.logs) {
 		for (const log of receipt.logs) {
-			const event = contract.interface.parseLog(log);
+			const event = contract?.interface.parseLog(log);
 			if (event?.name === eventName) {
 				return event;
 			}
@@ -84,7 +84,7 @@ async function getEvent(
 
 export async function mintToken(cidHash: string, encryptedKeyHash: string): Promise<TokenDetails> {
 	try {
-		const txResponse = await contract.mintToken(cidHash, encryptedKeyHash);
+		const txResponse = await contract?.mintToken(cidHash, encryptedKeyHash);
 
 		const tokenMintedEvent = await getEvent(txResponse, 'TokenMinted');
 		if (!tokenMintedEvent) throw new Error('TokenMinted event not found.');
@@ -113,7 +113,7 @@ export async function getTokensInRange(start: number, count: number): Promise<To
 		const end = start + count;
 
 		// Call the smart contract to fetch tokens in this range
-		const result = await contract.getTokensInRange(start, end);
+		const result = await contract?.getTokensInRange(start, end);
 
 		// Expect result to be an array of arrays: [token IDs, cidHashs]
 		const tokenIds: number[] = result[0];
@@ -138,7 +138,7 @@ export async function getSharedTokensInRange(start: number, count: number): Prom
 		const end = start + count;
 
 		// Call the smart contract to fetch shared tokens within the specified range
-		const result = await contract.getSharedTokensInRange(start, end);
+		const result = await contract?.getSharedTokensInRange(start, end);
 
 		// Expect result to be an array of arrays: [token IDs, cidHashs]
 		const tokenIds: number[] = result[0];
@@ -160,7 +160,7 @@ export async function getSharedTokensInRange(start: number, count: number): Prom
 export async function transferToken(tokenId: number, to: string,): Promise<Boolean> {
 	try {
 		// Call the contract's transferToken function
-		const tx = await contract.transferToken(tokenId, to);
+		const tx = await contract?.transferToken(tokenId, to);
 
 		// Wait for transaction confirmation
 		await tx.wait();
@@ -188,7 +188,7 @@ export async function shareToken(to: string, tokenId: number): Promise<boolean> 
 		}
 
 		// Call the contract's `shareToken` function with the array of addresses
-		const tx = await contract.shareToken(tokenId, to);
+		const tx = await contract?.shareToken(tokenId, to);
 
 		// Wait for the transaction to confirm
 		await tx.wait();
@@ -205,7 +205,7 @@ export async function shareToken(to: string, tokenId: number): Promise<boolean> 
 export async function burnToken(tokenId: number): Promise<Boolean> {
 	try {
 		// Call the contract's burnToken function
-		const tx = await contract.burnToken(tokenId);
+		const tx = await contract?.burnToken(tokenId);
 		console.log('Transaction hash:', tx.hash);
 
 		// Wait for transaction confirmation
@@ -221,7 +221,7 @@ export async function burnToken(tokenId: number): Promise<Boolean> {
 
 export async function getSupply(): Promise<number> {
 	try {
-		const totalNFTs = await contract.getSupply();
+		const totalNFTs = await contract?.getSupply();
 
 		return Number(totalNFTs);
 	} catch (error) {
@@ -233,7 +233,7 @@ export async function getSupply(): Promise<number> {
 
 export async function getSharedWithSupply(): Promise<number> {
 	try {
-		const totalSharedWithNFTs = await contract.getSharedWithSupply();
+		const totalSharedWithNFTs = await contract?.getSharedWithSupply();
 
 		return Number(totalSharedWithNFTs);
 	} catch (error) {
@@ -251,7 +251,7 @@ export async function reencrypt(tokenId: number, encryptedFileKey: Uint8Array[],
 ): Promise<string[]> {
 
 	try {
-		const data = await contract.reencrypt(tokenId, encryptedFileKey, publicKey, signature);
+		const data = await contract?.reencrypt(tokenId, encryptedFileKey, publicKey, signature);
 
 		if (!data) {
 			console.error('No return for contract.reencrypt');

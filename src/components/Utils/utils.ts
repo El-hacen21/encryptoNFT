@@ -2,7 +2,6 @@
 import { convertCounterObjectToUint8Array, readFileAsArrayBuffer, arrayBufferToFile, base64ToArrayBuffer, bufferToBase64 } from './other';
 import { encryptionAlgorithm } from './keyencrypt'
 import axios from 'axios';
-import { IPFSConfig } from '../../config';
 
 
 export interface CiphFile {

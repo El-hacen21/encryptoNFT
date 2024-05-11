@@ -6,7 +6,7 @@ import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfil
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '', 
+  base: '/zama_bounty/',
   optimizeDeps: {
     esbuildOptions: {
       // Node.js global to browser globalThis

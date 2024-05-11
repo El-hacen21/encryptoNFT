@@ -52,7 +52,7 @@ export const Connect: React.FC<{
     if (!eth) {
       setError('No wallet has been found');
       //Display a modal
-      const [showMetaMaskModal, setShowMetaMaskModal] = useState<boolean>(false);
+      const [, setShowMetaMaskModal] = useState<boolean>(false);
 
       useEffect(() => {
         // Check for MetaMask or any Web3 provider
