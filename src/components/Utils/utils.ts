@@ -143,7 +143,7 @@ export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
     // Make an HTTP POST request to Pinata's pinning service
     const response = await axios.post(PINATA_API_URL, formData, {
       headers: {
-        'Authorization': `Bearer ${ipfsApiKey}`, // Use the JWT from environment variables
+        'Authorization': `Bearer ${ipfsApiKey}`, 
         'Content-Type': `multipart/form-data;`, 
       }
     });
@@ -164,20 +164,19 @@ export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
 };
 
 
-// Function to fetch encrypted file data using a CID hash
 export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
+  const url = `https://gateway.pinata.cloud/ipfs/${cidHash}`;
   try {
-    const response = await axios.get(cidHash); // Assuming cidHash is the full URL to the resource
+    const response = await axios.get(url);
     if (response.data) {
-      // Assuming the response.data is already in the format of CiphFile ,
       return response.data as EncryptedFile;
     } else {
       throw new Error("No data returned from the server.");
     }
   } catch (error) {
     console.error("Error fetching data:", error);
-    // Rethrowing the error to handle it further up the call stack or to notify the user appropriately.
     throw error;
   }
 }
+
 
