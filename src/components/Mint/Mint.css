@@ -1,0 +1,121 @@
+/************ mints Css ************/
+.mint {
+    padding: 50px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .mint-bx {
+    background: black;
+    border-radius: 30px;
+    text-align: center;
+    padding: 50px 50px;
+    width: 85%;
+    /* Adjust the width for better layout control */
+    margin: 50px auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
+      /* Deeper shadow for more depth */
+      inset 0 2px 4px rgba(0, 0, 0, 0.25);
+    /* Enhanced inner shadow for sophistication */
+    transition: transform 0.3s ease-in-out;
+    color: #FFFFFF;
+
+  }
+  
+  
+  
+  .mint-bx:hover {
+    transform: translateY(-10px);
+  }
+  
+  .mint h2 {
+    font-size: 40px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+  
+  .mint p {
+    color: #e0e0e0;
+    font-size: 16px;
+    letter-spacing: 1px;
+    line-height: 1.8;
+    margin: 20px 0 50px;
+  }
+  
+  .mint-slider {
+    width: 90%;
+    margin: 0 auto;
+    padding: 20px 0;
+  }
+  
+  .mint-slider .item img {
+    width: 100%;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  
+  
+  
+  /* Upload File */
+  .file-upload-container {
+    text-align: center;
+    margin: 20px;
+  }
+  
+  .file-upload-label {
+    display: inline-block;
+    border: 2px dashed #ccc;
+    padding: 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    position: relative;
+    /* For absolute positioning of supported file types */
+  }
+  
+  .file-upload-label:hover {
+    background-color: #f9f9f9;
+  }
+  
+  .upload-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .upload-icon {
+    width: 24px;
+    /* Icon size */
+    height: auto;
+  }
+  
+  .file-types-explanation {
+    font-size: 12px;
+    /* Smaller font for subtlety */
+    color: #666;
+    /* Less prominent color */
+    margin-top: 10px;
+    /* Spacing from the upload area */
+  }
+  
+  .upload-explanation {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .file-upload-status {
+    color: #4CAF50;
+    margin-top: 10px;
+  }
+  
+  .uploaded-file-info {
+    margin-top: 5px;
+  }
+
+  .file-upload-error {
+    color: #F44336;
+  }
