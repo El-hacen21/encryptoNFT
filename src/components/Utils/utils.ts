@@ -4,6 +4,7 @@ import { encryptionAlgorithm } from './keyencrypt'
 import axios from 'axios';
 import { IPFSConfig } from '../../config';
 
+
 export interface CiphFile {
   encryptedFileData: string;  // Base64 encoded string
   encryptedMetadata: string;  // Base64 encoded string
@@ -121,36 +122,47 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
 }
 
 
-export const uploadFileToIPFS = async (encryptedFile: EncryptedFile) => {
+export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
+  const ipfsApiKey = import.meta.env.VITE_PINATA_API_KEY;
+  const PINATA_API_URL="https://api.pinata.cloud/pinning/pinFileToIPFS";
+
+  // Prepare the encrypted file as a JSON string
   const encryptedFileString = JSON.stringify(encryptedFile);
   const encoder = new TextEncoder();
   const metadataArrayBuffer = encoder.encode(encryptedFileString);
-
-  // console.log("encryptedFileString : ", encryptedFileString);
-
   const formData = new FormData();
+
+  // Append the encrypted file as a Blob of type 'application/json'
   formData.append("file", new Blob([metadataArrayBuffer], { type: 'application/json' }));
 
+  const pinataOptions = JSON.stringify({
+    cidVersion: 0, 
+  });
+  formData.append('pinataOptions', pinataOptions);
+
   try {
-    const response = await fetch(IPFSConfig.apiURL, {
-      method: 'POST',
-      body: formData,
+    // Make an HTTP POST request to Pinata's pinning service
+    const response = await axios.post(PINATA_API_URL, formData, {
+      headers: {
+        'Authorization': `Bearer ${ipfsApiKey}`, // Use the JWT from environment variables
+        'Content-Type': `multipart/form-data;`, 
+      }
     });
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       throw new Error(`IPFS upload failed: ${response.statusText}`);
     }
 
-    const json = await response.json();
-    const hash = json.Hash;
-    // console.log(`File uploaded to local IPFS with hash: ${hash}`);
-    return `${IPFSConfig.gatewayURL}/${hash}`;  // Returns the URL via configured gateway
+    // Log the response data from Pinata (contains IPFS hash and more)
+    console.log('File uploaded to IPFS via Pinata:', response.data);
+
+    // Construct the URL to access the file via an IPFS gateway
+    return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
   } catch (error) {
-    console.error("Error uploading to IPFS:", error);
+    console.error("Error uploading to IPFS via Pinata:", error);
     throw error;
   }
 };
-
 
 
 // Function to fetch encrypted file data using a CID hash
@@ -170,15 +182,3 @@ export async function getEncryptedFileCidHash(cidHash: string): Promise<Encrypte
   }
 }
 
-// import * as crypto from 'crypto';
-
-// function generateSHA256(input: string): string {
-//     const hash = crypto.createHash('sha256'); // Create a SHA256 hash object
-//     hash.update(input); // Update hash with data to be hashed
-//     return hash.digest('hex'); // Generate the hash digest in hexadecimal format
-// }
-
-// // Example usage:
-// const myData = "Hello, world!";
-// const hashOutput = generateSHA256(myData);
-// console.log(hashOutput); // Outputs the SHA-256 hash of the input string

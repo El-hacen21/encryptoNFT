@@ -71,9 +71,8 @@ Cette fonction vérifie enfin que la `encryptedFileKey` est bien celle du token:
 
 ## Pas encore Prêt du côté de l'interface
 
-1. Affichage des documents partagés : Dans la galerie, je prévois d'ajouter une section pour afficher les documents (NFTs) partagés.
-
-2. Gestion de la révocation d'accès et de la révocation.
+1. Gestion de la révocation d'accès et de la révocation.
+2. Hidden Shared With en utilisant eadress
 
 ## Projets d'améliorations, merci d'avance pour les commentaires!
 

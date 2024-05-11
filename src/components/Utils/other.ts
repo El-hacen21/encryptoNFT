@@ -1,5 +1,5 @@
-import { Buffer } from 'buffer/';
 
+import { Buffer } from 'buffer/'
 
 export async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {

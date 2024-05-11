@@ -11,7 +11,6 @@ import { useNFTs, NFTContent } from '../Contexts/NFTContext';
 import { toast } from 'react-toastify'
 import { ArrowClockwise, Download } from 'react-bootstrap-icons';
 import { getSignature } from '../../fhevmjs';
-import { SharedWith } from './SharedWith';
 
 export const Gallery = () => {
     const [page, setPage] = useState(0);
@@ -26,8 +25,6 @@ export const Gallery = () => {
 
     const [nftsSharedWithMe, setNFTsSharedWithMe] = useState<NFTContent[]>([]);
 
-    const [isShareWithModalOpen, setIsShareWithModalOpen] = useState(false);
-
     const handleShare = async (tokenId: number, to: string) => {
         const response = await contract.shareToken(to, tokenId);
 
@@ -40,7 +37,7 @@ export const Gallery = () => {
     };
 
     const handleSharedWith = async (tokenId: number) => {
-        setIsShareWithModalOpen(true);
+        // setIsShareWithModalOpen(true);
 
         // const response = await contract.shareToken(to, tokenId);
 
@@ -261,11 +258,13 @@ export const Gallery = () => {
                                             onDelete={() => handleDelete(token.id)}
                                             tokenId={token.id}
                                         />
-                                        <SharedWith tokenId={token.id} open={isShareWithModalOpen} onClose={() => setIsShareWithModalOpen(false)} />
+                                        
                                     </td>
+
                                 </tr>
                             ))}
                         </tbody>
+                        
                     </Table>
 
                     <Pagination className="justify-content-center mt-4">

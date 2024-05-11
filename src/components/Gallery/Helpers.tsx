@@ -74,9 +74,7 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
         if (actionType === 'Share') {
             onShare(recipientAddress);
         }
-        else if (actionType === 'SharedWith') {
-            onSharedWith(tokenId);
-        }
+
         else if (actionType === 'Transfer') {
             onTransfer(recipientAddress);
         } else if (actionType === 'Delete') {
@@ -84,18 +82,12 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
         }
     };
 
-    // Perform the desired action after confirmation
     const handleSharedWith = () => {
-        setShowCofirmModal(false);
-        if (actionType === 'Share') {
-            onShare(recipientAddress);
-        }
-        else if (actionType === 'Transfer') {
-            onTransfer(recipientAddress);
-        } else if (actionType === 'Delete') {
-            onDelete();
-        }
+        setShowSharedWithModal(true);
+        onSharedWith(tokenId);
+
     };
+
 
     // Custom tooltip rendering
     const renderTooltip = (props: any, message: string) => (
@@ -134,7 +126,7 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
                         </Dropdown.Item>
                     </OverlayTrigger>
                     <OverlayTrigger placement="top" overlay={(props) => renderTooltip(props, 'Shared With')}>
-                        <Dropdown.Item onClick={() => onSharedWith(tokenId)}>
+                        <Dropdown.Item onClick={() => handleSharedWith()}>
                             Shared With
                         </Dropdown.Item>
                     </OverlayTrigger>
