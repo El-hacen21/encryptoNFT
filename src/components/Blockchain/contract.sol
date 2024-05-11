@@ -70,6 +70,35 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         return tokenId;
     }
 
+    // Function to retrieve the number of tokens owned by the caller
+    function getSupply() external view returns (uint256) {
+        return ownerTokens[msg.sender].length();
+    }
+
+    // Public function to get a list of tokens with pagination
+    function getTokensInRange(uint256 start, uint256 end)
+        external
+        view
+        returns (uint256[] memory, string[] memory)
+    {
+        uint256 totalTokens = ownerTokens[msg.sender].length();
+
+        require(start < totalTokens, "Invalid start index");
+        if (end > totalTokens) end = totalTokens;
+
+        uint256 rangeSize = end - start;
+        uint256[] memory tokens = new uint256[](rangeSize);
+        string[] memory uris = new string[](rangeSize);
+
+        for (uint256 i = 0; i < rangeSize; i++) {
+            uint256 tokenId = ownerTokens[msg.sender].at(start + i);
+            tokens[i] = tokenId;
+            uris[i] = tokenURI(tokenId);
+        }
+
+        return (tokens, uris);
+    }
+
     // Function to share a token with another user
     function shareToken(uint256 tokenId, address user)
         public
@@ -84,16 +113,6 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         sharedAccess[tokenId][user] = true;
         sharedTokens[user].add(tokenId);
         tokenSharedWithUsers[tokenId].add(user);
-    }
-
-    // Function to revoke shared access to a token for a specific address
-    function revokeTokenAccess(uint256 tokenId, address user)
-        public
-        onlyTokenOwner(tokenId)
-    {
-        require(sharedAccess[tokenId][user], "Access not granted.");
-        sharedAccess[tokenId][user] = false;
-        sharedTokens[user].remove(tokenId);
     }
 
     // Function to get shared tokens for a user with pagination
@@ -121,39 +140,25 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         return (tokens, uris);
     }
 
-    // Function to retrieve the number of tokens owned by the caller
-    function getSupply() external view returns (uint256) {
-        return ownerTokens[msg.sender].length();
-    }
-
     // Function to retrieve the number of tokens shared with the caller
     function getSharedWithSupply() external view returns (uint256) {
         return sharedTokens[msg.sender].length();
     }
 
-    // Public function to get a list of tokens with pagination
-    function getTokensInRange(uint256 start, uint256 end)
-        external
-        view
-        returns (uint256[] memory, string[] memory)
-    {
-        uint256 totalTokens = ownerTokens[msg.sender].length();
 
-        require(start < totalTokens, "Invalid start index");
-        if (end > totalTokens) end = totalTokens;
-
-        uint256 rangeSize = end - start;
-        uint256[] memory tokens = new uint256[](rangeSize);
-        string[] memory uris = new string[](rangeSize);
-
-        for (uint256 i = 0; i < rangeSize; i++) {
-            uint256 tokenId = ownerTokens[msg.sender].at(start + i);
-            tokens[i] = tokenId;
-            uris[i] = tokenURI(tokenId);
+    // Function to get a list of all users sharing the given token
+    function getSharedUsers(uint256 tokenId) public view returns (address[] memory) {
+        EnumerableSet.AddressSet storage set = tokenSharedWithUsers[tokenId];
+        uint256 length = set.length();
+        address[] memory users = new address[](length);
+        
+        for (uint256 i = 0; i < length; ++i) {
+            users[i] = set.at(i);
         }
-
-        return (tokens, uris);
+        
+        return users;
     }
+
 
     // Function to transfer a token to another address
     function transferToken(uint256 tokenId, address to)
@@ -166,6 +171,16 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         // Use EnumerableSet to remove and add tokens in ownership tracking
         ownerTokens[msg.sender].remove(tokenId);
         ownerTokens[to].add(tokenId);
+    }
+
+    // Function to revoke shared access to a token for a specific address
+    function revokeTokenAccess(uint256 tokenId, address user)
+        public
+        onlyTokenOwner(tokenId)
+    {
+        require(sharedAccess[tokenId][user], "Access not granted.");
+        sharedAccess[tokenId][user] = false;
+        sharedTokens[user].remove(tokenId);
     }
 
     // function to revoke all shared access for a token
