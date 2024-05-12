@@ -11,7 +11,10 @@ Seuls les utilisateurs qui demandent effectivement à lire ce contenu en clair p
 En résumé, l'interface graphique fournie par l'API (`Gallery.css` et `Gallery.tsx`) permet à la Créatrice d'un contenu secret (`file`) de réaliser automatiquement les opérations suivantes.
 Génération d'une clé symétrique (`fileKey`), encryption de `file` sous cette clé `fileKey` pour donner une ciphertext `ciphFile`.
 Puis upload de `ciphFile` sur IPFS, concaténé avec une encryption de la `fileKey` (`encryptedFileKey`) sous la clé publique de l'instance de la fhEVM attachée au contrat.
-// _On voit donc que contrôler l'accès au contenu en clair `file` équivaut à contrôler l'accès à la `fileKey`._ 
+
+- `// On voit donc que contrôler l'accès au contenu en clair "file" équivaut à contrôler l'accès à la "fileKey".`
+- `// On voit donc que contrôler l'accès au contenu en clair "file" équivaut à contrôler l'accès à la "fileKey".`
+  
 Enfin, mintage du NFT associé à l'`encryptedFileKey`.
 // Le contrat va réaliser le contrôle d'accès à l'`encryptedFileKey`: c'est possible car les miners fhEVM ont le pouvoir de décrypter la `encryptedFileKey` en la `fileKey`, à destination d'une liste de Bénéficiaires accrédités (identifiées par leurs adresses Ethereum).
 
