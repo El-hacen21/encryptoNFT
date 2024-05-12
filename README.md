@@ -1,57 +1,65 @@
-# Documentation du projet NFT pour contrôle d'accès à du contenu confidentiel, par El Hacen Diallo et Matthieu Rambaud
+# Documentation of the project NFT for access control to secret content, by El Hacen Diallo & Matthieu Rambaud
 
-Ce document fournit une vue d'ensemble du processus de création et de gestion de NFTs qui réalisent du contrôle d'accès à des contenus secrets.
-La gestion des NFTs est réalisée par le contrat unique /src/components/Blockchain/contract.sol et l'interface graphique Gallery permet d'interagir avec ce contrat et le lieu de stockage des contenus (IPFS).  
+This document gives an overview of the process of creation and management of NFTs doing access control to secret contents.
+The management of the NFTs is done by the unique [contract](/src/components/Blockchain/contract.sol) and the graphical interface (Mint.css and Gallery.css) enables to interact with this contract and with the storage place of the encrypted secret contents.
+This storage place is IPFS (InterPlanetary File System), ensuring robust and decentralized storage solutions.
+Each NFT (token) controls access to one secret content, its `owner` may possibly give access to this content to several users, which we call the _Shared-with_ of the token.
 
-Comme expliqué dans V., nous envisageons d'ajouter en bonus l'option d'encrypter l'identité des utilisateurs ayant accès à un contenu secret.
-Seuls les utilisateurs qui demandent effectivement à lire ce contenu en clair perdront l'anonymat. 
-Ce sera réalisable dès que des fonctions efficaces pour les encrypted arrays seront disponibles dans la fhevm,
+As explained in V. below, we are considering adding, as a bonus, the possibility to hide the identities the Shared-with.
+Only the Shared-with effectively querying access to a plaintext content, would lose their anonymity. 
+This will be implementable as soon as efficient functions for encrypted arrays will be available in the fhEVM.
 
-## I. Création d'un NFT à partir d'un contenu secret
-En résumé, l'interface graphique fournie par l'API (`Gallery.css` et `Gallery.tsx`) permet à la Créatrice d'un contenu secret (`file`) de réaliser automatiquement les opérations suivantes:
-  - Génération d'une clé symétrique (`fileKey`), encryption de `file` sous cette clé `fileKey` pour donner une ciphertext `ciphFile`.
-  - Puis upload de `ciphFile` sur IPFS, concaténé avec une encryption de la `fileKey` (`encryptedFileKey`) sous la clé publique de l'instance de la fhEVM attachée au contrat.<br />
-    `// On voit donc que contrôler l'accès au contenu en clair "file" équivaut à contrôler l'accès à la "fileKey".`<br />
-  - Enfin, mintage du NFT associé à l'`encryptedFileKey`.<br />
-    `// Le contrat va réaliser le contrôle d'accès à l'"encryptedFileKey": c'est possible car les miners fhEVM ont le pouvoir de décrypter la "encryptedFileKey" en la "fileKey", à destination d'une liste de Bénéficiaires accrédités (identifiées par leurs adresses Ethereum).`
+## 0. Running the Application
+  - The graphical interface is provided by Mint.css and Gallery.css. It onboard a [short documentation](/src/components/HowItWorks/HowITWorks.tsx).
+  - In case, we have deployed the application here: https://el-hacen21.github.io/zama_bounty/ .
+  - To run the application locally: a first requirement is to import Buffer. Recall that Buffer is used in Zama's implementation of the `instance.decrypt` function, which decrypts re-rencrypted ciphertexts produced by the fhEVM.
+    This import can cause problems https://docs.zama.ai/fhevm/guides/webpack .
+    A second requirement is that, since the application interacts with IPFS, it is necessary to run an IPFS node.
+    The hard way is to run a local IPFS node (in which case, it is needed to update IPFSConfig in config.ts).
+    The easy way is to use Pinata: Pinata (https://www.pinata.cloud/) is a cloud-based service that provides an easier way to upload and manage files on IPFS. <br />
+    
+## I. Creation of an NFT from a secret content
+Summarizing, the graphical interface (Mint.css) enables the Creator of a secret content (`file`) to perform automatically all the following steps at once:
+  - Generation of a symmetric key (`fileKey`), encryption of `file` under `fileKey`, producing a ciphertext `ciphFile`.
+  - Then, upload of `ciphFile` on IPFS, concatenated with an encryption of the `fileKey` (`encryptedFileKey`) under the fhEVM public key attached to the contract.<br />
+    `// Hence, controling access to the secret content "file" is equivalent to controling access to the "fileKey".`<br />
+  - Finally, minting of the NFT associated to the `encryptedFileKey`.<br />
+    `// The contract will do the access control to the "encryptedFileKey", thanks to the power of the fhEVM to privately decrypt the "encryptedFileKey" into a "fileKey", to a predetermined list of so-called Shared-with users (identified by their Ethereum addresses).`
 
-En détail: La Créatrice d'un contenu secret (`file`) l'uploade dans l'interface. Cet upload appelle `EncryptThenMint` dans Mint.tsx, qui réalise automatiquement toutes les opérations suivantes:
+In detail: the Creator uploads a secret content (`file`) in the graphical interface. This upload calls `EncryptThenMint` in Mint.tsx, which automatically performs all the following operations at once:
 
-1. **Encryption du Contenu** :
-    - Une clé d'encryption symétrique (`fileKey`) de taille 256bits est générée.
-    - Le fichier `file` est encrypté symétriquement pour produire le ciphertext:<br />
+1. **Encryption of the Secret Content**:
+    - A symmetric 256 bits encryption key (`fileKey`) is generated.
+    - The secret content `file` is symmetrically encrypted to produce the ciphertext:<br />
         <p align="center"> "ciphFile" <-- AES-CTR.Encrypt("fileKey","file") </p>
-    - Le `fileKey` est chiffrée en un ciphertext: `encryptedFileKey` par l'instance de la fhEVM. <br />
-      `// C'est fait dans la fonction "fileKeyEncryption" dans Utils/utils.ts. Pour des raisons de limitation à 64bits d'input de la fonction encrypt64 de la fhEVM, "encryptedFileKey" se présente sous la forme d'un tableau de 4 cases de 64bits chacune.`
-    - Ensuite `encryptedFileKey` est ajoutée aux métadonnées du `ciphFile`, pour donner:<br />
+    - The `fileKey` is encrypted into a ciphertext: `encryptedFileKey` under the fhEVM public key attached to the contract. <br />
+      `// This is done in the function "fileKeyEncryption" in Utils/utils.ts. For compatibility reasons with the encryption function `encrypt64` taking 64bits-long inputs, "encryptedFileKey" comes as an array of 4 entries of 64bits each.`
+    - Then, the `encryptedFileKey` is added as a metadata of the `ciphFile`, giving:<br />
       <p align="center"> "encryptedFile" <-- ("ciphFile"|"encryptedFileKey"). </p>
 
-2. **Stockage sur IPFS** :
-    - `encryptedFile` est uploadé sur IPFS (InterPlanetary File System), et le `cidHash` (identifiant unique du fichier sur IPFS) est récupéré et utilisé comme métadonnée essentielle du NFT.
-    - For simplicity we recommend IPFS Storage via Pinata: Pinata (https://www.pinata.cloud/)  is used to store and manage digital assets on the  (IPFS). Pinata is a cloud-based service that provides an easier way to upload and manage files on IPFS, ensuring robust and decentralized storage solutions. <br />
-    `// Pour tester l'application il faut un noeud local IPFS et mettre à jour IPFSConfig dans config.ts `
-
-3. **Mintage du NFT** :
-    - Un NFT (token) est créé au contrat, contenant `cidHash` comme référence au `encryptedFile`. `// C'est réalisé par la fonction "mintToken(cidHash)" dans contract.ts.`
-    - Le hash de la `encryptedFileKey` est également ajouté comme métadonnée essentielle du NFT. `// On aurait pu mettre toute la "encryptedFileKey" en métadonnée mais ça aurait pris beaucoup plus de place sur la blockchain. On va détailler plus loin l'astuce permettant de contrôler l'accès à "fileKey" juste avec le hash de la "encryptedFileKey". `
-      
-## II. Gestion du NFT
-
-- **Transfert et Burn du NFT** :
-    - Des opérations classiques telles que le transfert de propriété ou la destruction (burn) du NFT sont possibles via l'interface graphique fournie par l'API.
+2. **Storage on IPFS** :
+    - `encryptedFile` is uploaded on IPFS , and the `cidHash` (unique IPFS identifier of `encryptedFile`) is retrieved.
    
-- **Ajout et Révocation de Bénéficiaires** :
-    - Les fonctions `shareToken` et `revokeTokenAccess`, permettent d'ajouter ou enlever l'adresse d'un utilisateur (`user`) à la liste `sharedAccess[tokenId]` des utilisateurs ayant accès à un token (`tokenId`).
-      Par la suite on appellera ces utilisateurs les _shared-with_ du token. <br />
-    `// Ces fonctions se trouvent dans contract.sol. 
-Pour permettre aux shared-with de connaître rapidement les tokens auxquels ils ont accès, ces fonctions mettent également à jour les listes ("sharedTokens[user]") des tokens partagés avec chaque shared-with ("user")`  <br />
-    `// L'interface permet également de révoquer à la fois tous les shared-with d'un token donné.`
+3. **Minting of the NFT** :
+    - An NFT (token) is created on the contract, containing `cidHash` as IPFS reference to the `encryptedFile`. `// This is performed by the function "mintToken(cidHash)" in contract.ts.`
+    - The _hash_ of the `encryptedFileKey` is also added as metadata of the NFT. `// We could have put all the "encryptedFileKey" as metadata, but this would have costed much more blockchain storage space.
+      We will detail later the trick enabling the contract to control acces to "fileKey" despite storing only this hash of the "encryptedFileKey". `
+      
+## II. Management of the NFT
 
-## III. Accès au contenu en clair par un Shared-with
-La fonction `displayGallery` dans Gallery.tsx est exécutée par un Shared-with et permet d'afficher tous les contenus en clair auxquels il a accès.
-Elle fait automatiquement toutes les étapes suivantes.
-En résumé, pour chaque contenu (token) dont il est shared-with, il demande la ré-encryption de `fileKey` sous format chiffré sous une clé d'encryption `publicKey` qu'il possède.
-Puis il décrypte cette ré-encryption, obtient `fileKey`, récupère le ciphertext public `ciphFile` sur IPFS et peut donc le déchiffrer vers `file` grâce à la `fileKey`.
+- **Transfer and Burn** :
+    - Classical operations such as transfer of ownership, or destruction (burn) of the NFT are possible via the graphical interface.
+   
+- **Addition and Revocation of Shared-with** :
+    - The functions `shareToken` and `revokeTokenAccess` (in contract.sol and accessible by the graphical interface) enable to add or remove the address of a user (`user`) in the list `sharedAccess[tokenId]` of the _Shared-with_ users, i.e., those having access to the secret content associated to the token (`tokenId`).<br />
+    ` // To enable a shared-with user to quickly know the tokens that it has access to, these functions also update the lists ("sharedTokens[user]") of the tokens shared with each user ("user")`  <br />
+    `// The graphical interface also enables to revoke, at once, all the shared-with of a given token.`
+
+## III. Acces to the secret content by a Shared-with
+The function `displayGallery` (in Gallery.tsx) is executed by a user, it returns and displays all the secret contents of the tokens of which it is a _shared-with_.
+The function performs automatically all the following steps.
+Summarizing, for each secret content (token) for which the user is shared-with, it queries the re-encryption of the `fileKey` under a public encryption key `publicKey` which the user possesses.
+Then, it decrypts this re-encryption to obtain `fileKey`, downloads the public ciphertext `ciphFile` from IPFS and finally decrypts it into `file` using the `fileKey`.
 
 En détail:
 
