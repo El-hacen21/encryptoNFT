@@ -33,7 +33,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
     - The secret content `file` is symmetrically encrypted to produce the ciphertext:<br />
         <p align="center"> "ciphFile" <-- AES-CTR.Encrypt("fileKey","file") </p>
     - The `fileKey` is encrypted into a ciphertext: `encryptedFileKey` under the fhEVM public key attached to the contract. <br />
-      `// This is done in the function "fileKeyEncryption" in Utils/utils.ts. For compatibility reasons with the encryption function `encrypt64` taking 64bits-long inputs, "encryptedFileKey" comes as an array of 4 entries of 64bits each.`
+      `// This is done in the function "fileKeyEncryption" in Utils/utils.ts. For compatibility reasons with the encryption function "encrypt64" taking 64bits-long inputs, "encryptedFileKey" comes as an array of 4 entries of 64bits each.`
     - Then, the `encryptedFileKey` is added as a metadata of the `ciphFile`, giving:<br />
       <p align="center"> "encryptedFile" <-- ("ciphFile"|"encryptedFileKey"). </p>
 
@@ -52,7 +52,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
    
 - **Addition and Revocation of Shared-with** :
     - The functions `shareToken` and `revokeTokenAccess` (in contract.sol and accessible by the graphical interface) enable to add or remove the address of a user (`user`) in the list `sharedAccess[tokenId]` of the _Shared-with_ users, i.e., those having access to the secret content associated to the token (`tokenId`).<br />
-    ` // To enable a shared-with user to quickly know the tokens that it has access to, these functions also update the lists ("sharedTokens[user]") of the tokens shared with each user ("user")`  <br />
+    ` // To enable a shared-with user to quickly know the tokens that it has access to, these functions also update the lists ("sharedTokens[user]") of the tokens shared with each user ("user").` <br />
     `// The graphical interface also enables to revoke, at once, all the shared-with of a given token.`
 
 ## III. Acces to the secret content by a Shared-with
@@ -78,7 +78,7 @@ In more detail, the function `displayGallery` performs automatically the followi
     `The novelty is that "onlyAuthorizedSigner" allows the msg.sender not to be necessarily the "signer".
     To maintain security despite this relaxation, "onlyAuthorizedSigner" controls acces on the basis of the "signer" (of the "publicKey"), and not anymore based on the "msg.sender" (as in `["balanceOf" of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)`)`
     `These modifications enable a scalability gain, as explained below in IV.` <br /><br />
-    `// Very important: the  function "reencrypt" also checks that the "encryptedFileKey" is the one of the token: indeed, otherwise, a Shared-with of token1 could get the `fileKey2` of token2!.`<br />
+    `// Very important: the  function "reencrypt" also checks that the "encryptedFileKey" is the one of the token: indeed, otherwise, a Shared-with of token1 could get the fileKey2 of token2!.`<br />
     `// To this end, "reencrypt" compares the hash of the input "encryptedFileKey", with the hash stored on the contract. This trick enables no to store the (much heavier) "encryptedFileKey" on the blockchain.`
       
     - Decryption of `reEncryptedFileKey` with the secret decryption key of the Shared-with, to obtain the `fileKey`.<br />
@@ -97,7 +97,7 @@ This proves that these `publicKeys`'s were generated and kept secretly by the Al
 As a result, only the shared-with Alices can decrypt the `reEncryptedFileKey`'s obtained by Bob.
 To achieve this desirable behavior of our function `reencrypt`, we had to remove the official modifier [`onlySignedPublicKey`](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11).
 Indeed it imposed that the `publicKey` for reencryption be signed by the msg.sender, whereas, in our use-case, the msg.sender is instead Bob.
-Our second modification was to control accès, in `reencrypt`, directly based on the `signer` of the `publicKey` (Alice), and not based on the le `msg.sender` Bob (as in [`balanceOf` of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol) ). 
+Our second modification was to control acces, in `reencrypt`, directly based on the `signer` of the `publicKey` (Alice), and not based on the `msg.sender` Bob (as in [`balanceOf` of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol) ). 
 
 Note that our graphical interface does not yet enable such a delegation, it deals only with calls to `reencrypt` made directly by Shared-with themselves.
 
