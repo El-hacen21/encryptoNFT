@@ -58,56 +58,60 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
 ## III. Acces to the secret content by a Shared-with
 The function `displayGallery` (in Gallery.tsx) is executed by a user, it returns and displays all the secret contents of the tokens of which it is a _shared-with_.
 The function performs automatically all the following steps.
-Summarizing, for each secret content (token) for which the user is shared-with, it queries the re-encryption of the `fileKey` under a public encryption key `publicKey` which the user possesses.
+Summarizing, for each secret content (token) for which the user is shared-with, it queries the re-encryption of the `fileKey` under a public encryption key `publicKey` which the user owns.
 Then, it decrypts this re-encryption to obtain `fileKey`, downloads the public ciphertext `ciphFile` from IPFS and finally decrypts it into `file` using the `fileKey`.
 
-En détail:
+In more detail, the function `displayGallery` performs automatically the following steps for each token in the list "sharedTokens[user]", i.e., of which the user is a _shared-with_:
 
-1. **Génération de la Clé de Réencryption** :
-    - Le Shared-with d'un token a besoin de recevoir la `fileKey` sous format chiffré sous une clé d'encryption `publicKey` qu'il possède.
-      Il commence donc par générer `publicKey`, s'il n'en a pas déjà une associée à ce contrat, grâce à la fonction `getSignature(contractAddress, account)`.<br />
-      `// Cette fonction est récupérée de `[fhevmjs.ts](https://github.com/zama-ai/fhevm-react-template/blob/main/src/fhevmjs.ts).
-      `// La syntaxe étrange ("getSignature") s'explique par le fait que l'output ("reencryption") de cette fonction est en fait la "publicKey" concaténée avec une signature ("signature") du Shared-with sur la "publicKey".`
+1. **Generation of the target public Key for Reencryption** :
+    - The user shared-with of a token needs to receive the `fileKey` encrypted under an encryption key `publicKey` which it owns.
+      It thus generates an encryption key pair (unless it has already one associated to the contract) using the function `getSignature(contractAddress, account)`.<br />
+      `// This function is borrowed from `[fhevmjs.ts](https://github.com/zama-ai/fhevm-react-template/blob/main/src/fhevmjs.ts).
+      `// The strange syntax ("getSignature") is because the output ("reencryption")  of this function is actually the "publicKey" concatenated with a signature ("signature") issued by the Shared-with on the "publicKey".`
    
 2. **Réencryption puis Décryption de la fileKey** :
-    - Réencryption de `encryptedFileKey` avec la clé publique `publicKey` pour obtenir `reEncryptedFileKey`.<br />
-    `// La demande de ré-encryption à la fhEVM est faite par la fonction "reencrypt" dans "contract.sol". C'est cette fonction qui contrôle l'accès: elle vérifie que le signataire ("signer") de la clé "publicKey" de réencryption fait bien partie de la liste des shared-with du token ("sharedAccess[tokenId]").`<br /><br />
-    `// Techniquement, cette vérification est faite par le modifier "onlyAuthorizedSigner".
-    Son implémentation est largement inspirée du modifier officiel `["onlySignedPublicKey"](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11).
-    `La nouveauté est que "onlyAuthorizedSigner" autorise que le msg.sender ne soit pas forcément le "signer".
-    To maintain security despite this relaxation, "onlyAuthorizedSigner" contrôle l'accès sur la base du "signer" de la "publicKey" de réencryption (et non plus sur la base du "msg.sender", comme dans la fonction `["balanceOf" du ERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)`)`
-    `Ces modifications permettent le gain de scalabilité dans le use-case expliqué ci-dessous en IV.` <br /><br />
-    `// Très important: la  fonction "reencrypt" vérifie également que la "encryptedFileKey" est bien celle du token: en effet sinon un shared-with de token1 pourrait obtenir l'accès à token2!.`<br />
-    `// Pour cela, "reencrypt" compare le hash de la "encryptedFileKey" passée en input, avec le hash stocké sur le contrat. Cette astuce permet de ne pas stocker la "encryptedFileKey" sur la blockchain et donc de gagner de la place.`
+    - Reencryption of the `encryptedFileKey` into the encryption key `publicKey`, to obtain `reEncryptedFileKey`.<br />
+    `// The reencryption query to the fhEVM is done by the function "reencrypt" in "contract.sol".
+        It is this function which controls the access: it checks that the signer ("signer") of the public key ("publicKey") is member of the list ("sharedAccess[tokenId]") of the Shared-with of the token .`<br /><br />
+    `// Technically, this check is done by the modifier "onlyAuthorizedSigner".
+    Its implementation is inspired from the official modifier `["onlySignedPublicKey"](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11).
+    `The novelty is that "onlyAuthorizedSigner" allows the msg.sender not to be necessarily the "signer".
+    To maintain security despite this relaxation, "onlyAuthorizedSigner" controls acces on the basis of the "signer" (of the "publicKey"), and not anymore based on the "msg.sender" (as in `["balanceOf" of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)`)`
+    `These modifications enable a scalability gain, as explained below in IV.` <br /><br />
+    `// Very important: the  function "reencrypt" also checks that the "encryptedFileKey" is the one of the token: indeed, otherwise, a Shared-with of token1 could get the `fileKey2` of token2!.`<br />
+    `// To this end, "reencrypt" compares the hash of the input "encryptedFileKey", with the hash stored on the contract. This trick enables no to store the (much heavier) "encryptedFileKey" on the blockchain.`
       
-    - Décryption de `reEncryptedFileKey` avec la secret decryption key du Shared-with, pour obtenir la `fileKey`.<br />
-    `// C'est fait par l'appel à "instance.decrypt". Attention: ici l' "instance" en question n'est pas la fhEVM, sinon la décryption serait publique! C'est l'instance locale du Shared-with, celle avec laquelle il a généré sa "publicKey" personnelle.`
-    - Utilisation de `fileKey` pour décrypter `ciphFile`: <br />
+    - Decryption of `reEncryptedFileKey` with the secret decryption key of the Shared-with, to obtain the `fileKey`.<br />
+    `// This is done via the call to "instance.decrypt". Note that the "instance" is not the fhEVM, we are not making a public decryption here. It is instead the local instance of the Shared-with, the one with which it generated its personal "publicKey".`
+    - Using the `fileKey` to decrypt the `ciphFile`: <br />
         <p align="center"> "decryptedFile" <-- AES-CTR.Decrypt("fileKey","ciphFile") </p> 
-        qui est donc égal au `file` initialement uploadé par la Créatrice.
+        which is thus equal to the `file` initially uploaded by the Creator.
 
-## IV. Bonus de scalabilité, grâce à la Délégation à un untrusted Acces Broker
-Les shared-with Alice n'ont pas tous envie de se créer un compte Ethereum, ni d'envoyer une requête à un contrat en payant du gaz à chaque fois qu'ils veulent accéder à un contenu.
-Notre contrat permet le cas d'usage bonus que _tout_ Bob peut appeler `reencrypt` avec une `publicKey` de ré-encryption générée et signed par Alice.
-Ainsi, Bob peut jouer le rôle de Untrusted Acces Broker pour le compte de plusieurs shared-with Alices, ce qui augmente la scalabilité.
+## IV. Scalability, thanks to Delegation to an untrusted Acces Broker
+The shared-with Alice(s) do not necessarily want to create Ethereum accounts, nor to send requests to a contract and spend gaz just to access secret contents.
+Our contract enables the use-case that _any_ Bob can call `reencrypt` with a `publicKey` for re-encryption which was generated and signed by Alice.
+Hence, Bob can play the role of an Untrusted Acces Broker on behalf of several shared-with Alices, thus improving scalability.
 
-Dans ce cas d'usage bonus, Bob est _untrusted_ car notre fonction `reencrypt` ne lui permet que d'obtenir des `reEncryptedFileKey` cryptées avec des clés _signées_ par des shared-with Alices, et donc qui ont été générées par elles.
-Ainsi, seules les shared-with Alices peuvent décrypter les `reEncryptedFileKey` obtenues par Bob (sauf si elles ont donné leurs secret decryption keys à Bob, ce qui est bien entendu fortement déconseillé).
-Pour arriver à réaliser ce bonus, nous avons dû enlever le modifier officiel [`onlySignedPublicKey`](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11).
-En effet il imposait que la `publicKey` de réencryption soit signée par le msg.sender, or, dans notre cas d'usage bonus, le msg.sender est Bob.
-Notre deuxième modification a été de contrôler l'accès dans `reencrypt` directement selon le `signer` de la `publicKey` (Alice), et non sur le `msg.sender` Bob (tel que le faisait [`balanceOf`](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol) ). 
+In such a use-case, Bob is _untrusted_ because our function `reencrypt` enables him to obtain only `reEncryptedFileKey`'s encrypted with `publicKeys`'s _signed_ by shared-with Alices.
+This proves that these `publicKeys`'s were generated and kept secretly by the Alices, unless they were absent-minded.
+As a result, only the shared-with Alices can decrypt the `reEncryptedFileKey`'s obtained by Bob.
+To achieve this desirable behavior of our function `reencrypt`, we had to remove the official modifier [`onlySignedPublicKey`](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11).
+Indeed it imposed that the `publicKey` for reencryption be signed by the msg.sender, whereas, in our use-case, the msg.sender is instead Bob.
+Our second modification was to control accès, in `reencrypt`, directly based on the `signer` of the `publicKey` (Alice), and not based on the le `msg.sender` Bob (as in [`balanceOf` of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol) ). 
 
-À noter que notre interface ne permet pas une telle délégation pour le moment, elle ne gère les appels à `reencrypt` que directement par les shared-with eux-mêmes.
+Note that our graphical interface does not yet enable such a delegation, it deals only with calls to `reencrypt` made directly by Shared-with themselves.
 
-## V. Projet d'amélioration: Anonymisation des shared-with, dès que les encrypted arrays seront disponibles
+## V. Project of improvement: Anonymization of the Shared-with, as soon as encrypted arrays will be released
 
-Nous prévoyons d'ajouter une fonctionalité optionnelle permettant à l'owner du NFT de déclarer des shared-with également sous la forme d'une liste (`hiddenSharedWith`) de leurs encrypted addresses (format "eaddress").
-C'est seulement au moment que le Shared-with a besoin d'accéder au contenu `file` en clair qu'il envoie la requête publique à reencrypt.
-Nous allons donc enrichir `reencrypt` pour qu'il teste l'appartenance de l'adresse faisant la requête (`signer` de la `publicKey`) à la liste (`hiddenSharedWith`): s'il y a appartenance, c'est donc que le `signer` était bien un shared-with.
-Ainsi, pour la grande majorité des shared-with Alices qui n'ont pas réellement besoin d'accéder au contenu `file`, leur anonymat est préservé.
-Cependant la [documentation](https://docs.zama.ai/fhevm/guides/pitfalls)  déconseille d'implémenter un test d'appartenance à une liste de ciphertexts. La raison est que les fonctions actuelles de la fhevm obligeraient à "loop over all the indexes and check equality homomorphically, however this pattern is very expensive in gas and should be avoided whenever possible."
-Cette documentation annonce dans le futur un test d'appartenance efficace à un encrypted array ("there are plans to make this kind of operation much more efficient in the future, by adding specialized operators for arrays").
-Dès que ce sera prêt, nous pourrons implémenter cette anonymisation.
+We are considering adding an optional fonctionality enabling the owner of a token to declare Shared-with's under the form of a list (`hiddenSharedWith`) of their encrypted addresses (format "eaddress").
+It is only when a Shared-with requests access to a plaintext content `file` that its public request to `reencrypt` makes it lose its anonymity.
+We thus need to enrich `reencrypt` so that its tests membership of the public `signer` of the `publicKey`, in the encrypted list (`hiddenSharedWith`).
+If it belongs, it is thus that the `signer` was indeed a (previously hidden) shared-with.
+Thus, for the arguably majority of Shared-with Alices who do not need to obtain the secret content `file`, their anonymity is préserved.
+What blocks us from implementing this addition is that, according to the [documentation](https://docs.zama.ai/fhevm/guides/pitfalls) , it is currently not advised to implement a membership test to a list of ciphertexts.
+The reason being that the currently available functions of the fhEVM would require to "loop over all the indexes and check equality homomorphically, however this pattern is very expensive in gas and should be avoided whenever possible."
+This documentation announces ("plans to make this kind of operation much more efficient in the future, by adding specialized operators for arrays").
+As soon as such a membership operator will be shipped, we will be able to implement anonymization.
 
 ## Credits
 
