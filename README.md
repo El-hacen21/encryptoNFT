@@ -20,7 +20,7 @@ En détail: La Créatrice d'un contenu secret (`file`) l'uploade dans l'interfac
 1. **Encryption du Contenu** :
     - Une clé d'encryption symétrique (`fileKey`) de taille 256bits est générée.
     - Le fichier `file` est encrypté symétriquement pour produire le ciphertext:<br />
-        <p align="center"> `ciphFile` <-- AES-CTR.Encrypt(`fileKey`,`file`) </p>
+        <p align="center"> "ciphFile" <-- AES-CTR.Encrypt("fileKey","file") </p>
     - Le `fileKey` est chiffrée en un ciphertext: `encryptedFileKey` par l'instance de la fhEVM. <br />
       `// C'est fait dans la fonction "fileKeyEncryption" dans Utils/utils.ts. Pour des raisons de limitation à 64bits d'input de la fonction encrypt64 de la fhEVM, "encryptedFileKey" se présente sous la forme d'un tableau de 4 cases de 64bits chacune.`
     - Ensuite `encryptedFileKey` est ajoutée aux métadonnées du `ciphFile`, pour donner:<br />
@@ -66,10 +66,10 @@ En détail:
     `// La demande de ré-encryption à la fhEVM est faite par la fonction "reencrypt" dans "contract.sol". C'est cette fonction qui contrôle l'accès: elle vérifie que le signataire ("signer") de la clé "publicKey" de réencryption fait bien partie de la liste des shared-with du token ("sharedAccess[tokenId]").`<br /><br />
     `// Techniquement, cette vérification est faite par le modifier "onlyAuthorizedSigner".
     Son implémentation est largement inspirée du modifier officiel `["onlySignedPublicKey"](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11).
-    `La nouveauté est que "onlySignedPublicKey" autorise que le msg.sender ne soit pas forcément le "signer".
+    `La nouveauté est que "onlyAuthorizedSigner" autorise que le msg.sender ne soit pas forcément le "signer".
     To maintain security despite this relaxation, "onlyAuthorizedSigner" contrôle l'accès sur la base du "signer" de la "publicKey" de réencryption (et non plus sur la base du "msg.sender", comme dans la fonction `["balanceOf" du ERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)`)`
     `Ces modifications permettent le gain de scalabilité dans le use-case expliqué ci-dessous en IV.` <br /><br />
-    `// À noter que la  fonction "reencrypt" vérifie que la "encryptedFileKey" est bien celle du token: en effet sinon un shared-with de token1 pourrait obtenir l'accès à token2!.`<br />
+    `// Très important: la  fonction "reencrypt" vérifie également que la "encryptedFileKey" est bien celle du token: en effet sinon un shared-with de token1 pourrait obtenir l'accès à token2!.`<br />
     `// Pour cela, "reencrypt" compare le hash de la "encryptedFileKey" passée en input, avec le hash stocké sur le contrat. Cette astuce permet de ne pas stocker la "encryptedFileKey" sur la blockchain et donc de gagner de la place.`
       
     - Décryption de `reEncryptedFileKey` avec la secret decryption key du Shared-with, pour obtenir la `fileKey`.<br />
