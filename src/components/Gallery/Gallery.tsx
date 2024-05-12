@@ -1,5 +1,5 @@
 import './Gallery.css'
-import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper } from './Helpers';
+import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper, formatAddress } from './Helpers';
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
 import * as contract from '../Blockchain/contract';
@@ -29,7 +29,7 @@ export const Gallery = () => {
         const response = await contract.shareToken(to, tokenId);
 
         if (response) {
-            toast.success(`The NFT#${tokenId} has been share with : ${to.substring(0, 8)}`);
+            toast.success(`The NFT#${tokenId} has been share with : ${formatAddress(to)}`);
 
         } else {
             toast.error(`Could not send the NFT#${tokenId}!`);
@@ -37,7 +37,6 @@ export const Gallery = () => {
     };
 
     const handleSharedWith = async (tokenId: number) => {
-        toast.error(`Handle Shared With NFT#${tokenId} not ready yet`);
         // setIsShareWithModalOpen(true);
 
         // const response = await contract.shareToken(to, tokenId);

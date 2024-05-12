@@ -67,7 +67,7 @@ export const Banner = () => {
                 <div className={isVisible ? "animate__animated animate__fadeIn" : ""}>
 
                   <h1>{`Secure your digital assets with `} <span className="txt-rotate" data-period="1000" data-rotate='[ "Zama" ]'><span className="wrap">{text}</span></span></h1>
-                  <p>Zama brings unparalleled privacy—where your ownership is absolute.</p>
+                  <p>Zama's fhEVM brings unparalleled privacy—where your ownership is absolute.</p>
                   <button className="tagline-btn" onClick={handleNavigation}><span className="tagline">Let’s Start Minting <ArrowRightCircle size={25} /> </span></button>
                 </div>}
 

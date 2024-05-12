@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, ListGroup } from 'react-bootstrap';
+import { getSharedWithAddresses, revokeTokenAccess, revokeAllSharedAccess } from '../Blockchain/contract';
+import { formatAddress } from './Helpers';
+import { toast } from 'react-toastify'
 
 interface SharedAccessModalProps {
   tokenId: number;
@@ -7,46 +10,55 @@ interface SharedAccessModalProps {
   onClose: () => void;
 }
 
-interface AddressItem {
-  address: string;
-}
-
 export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, onClose }) => {
-  const [sharedAddresses, setSharedAddresses] = useState<AddressItem[]>([]);
+  const [sharedAddresses, setSharedAddresses] = useState<string[]>([]);
 
   const fetchSharedAddresses = async () => {
-  
-    setSharedAddresses([{ address: '0x123...' }, { address: '0x456...' }]);
+    const addresses = await getSharedWithAddresses(tokenId);
+    setSharedAddresses(addresses);
   };
+
 
   useEffect(() => {
     if (open) {
       fetchSharedAddresses();
     }
-  }, [open]);
+  }, [open, tokenId]);
 
   const handleRevokeAccess = async (address: string) => {
-  
-    console.log(`Revoke access for ${address} on token ${tokenId}`);
-    setSharedAddresses(prev => prev.filter(item => item.address !== address));
+    const isSuccessRevoke = await revokeTokenAccess(tokenId, address);
+
+    if (isSuccessRevoke) {
+      toast.success(`Revoke access for ${formatAddress(address)} on NFT${tokenId} has succeeded!`);
+      setSharedAddresses(prev => prev.filter(item => item !== address));
+    }
+
   };
 
   const handleRevokeAllAccess = async () => {
-    console.log(`Revoke all access for token ${tokenId}`);
-    setSharedAddresses([]);
+    if (sharedAddresses.length == 0) {
+      toast.error(`No shared access for ${tokenId} !`);
+    } else {
+      const isSuccessRevokeAll = await revokeAllSharedAccess(tokenId);
+      if (isSuccessRevokeAll) {
+        toast.success(`Revoke all access for token NFT${tokenId} has succeeded!`);
+        setSharedAddresses([]);
+      }
+    }
+
   };
 
   return (
     <Modal show={open} onHide={onClose} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Shared Access for Token #{tokenId}</Modal.Title>
+        <Modal.Title>Shared With for NFT#{tokenId}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <ListGroup>
-          {sharedAddresses.map(item => (
-            <ListGroup.Item key={item.address} className="d-flex justify-content-between align-items-center">
-              {item.address}
-              <Button variant="danger" onClick={() => handleRevokeAccess(item.address)}>Revoke</Button>
+          {sharedAddresses.map(address => (
+            <ListGroup.Item key={address} className="d-flex justify-content-between align-items-center">
+              {formatAddress(address)}
+              <Button variant="danger" onClick={() => handleRevokeAccess(address)}>Revoke</Button>
             </ListGroup.Item>
           ))}
         </ListGroup>

@@ -20,7 +20,6 @@ const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ show, onHide }) => {
 
                 <h3>1. Setting Up</h3>
                 <ul>
-                    <li>Ensure you have an Ethereum wallet installed, such as MetaMask.</li>
                     <li>Connect your wallet to the application by clicking on "Connect Wallet".</li>
                 </ul>
 
@@ -32,19 +31,26 @@ const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ show, onHide }) => {
 
                 <h3>3. Managing Your NFTs</h3>
                 <ul>
-                    <li>In the "Gallery" section, you can see all the NFTs you've minted.</li>
-                    <li>Click on any NFT to view more details or initiate actions like transferring, deleting, or sharing access.</li>
-                </ul>
-
-                <h3>4. Transferring or Sending NFTs</h3>
-                <ul>
-                    <li>Select an NFT and click the "Transfer" button.</li>
-                    <li>Enter the recipient’s address and confirm the transaction.</li>
+                    <li>In the "Gallery" section, view all NFTs that you have minted.</li>
+                    <li>Click on any NFT to access detailed options. From here, you can:
+                        <ul>
+                            <li>Transfer ownership to another user.</li>
+                            <li>Share: grant a specific user access to the NFT.</li>
+                            <li>Manage sharing permissions, including:
+                                <ul>
+                                    <li>Viewing the list of users with whom the NFT is shared.</li>
+                                    <li>Revoking access for specific users.</li>
+                                    <li>Removing sharing permissions for all users simultaneously.</li>
+                                </ul>
+                            </li>
+                            <li>Delete the NFT if necessary.</li>
+                        </ul>
+                    </li>
                 </ul>
 
                 <h3>Need Help?</h3>
                 <p>
-                    If you need further assistance, feel free to check our <a href="https://github.com/El-hacen21/zama_bounty/">Documentation</a> or reach out to our support team.
+                    If you need further assistance, feel free to check our <a href="https://github.com/El-hacen21/zama_bounty/">Documentation</a>.
                 </p>
             </Modal.Body>
             <Modal.Footer>

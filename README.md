@@ -28,7 +28,10 @@ En détail: La Créatrice d'un contenu secret (`file`) l'uploade dans l'interfac
 
 2. **Stockage sur IPFS** :
     - `encryptedFile` est uploadé sur IPFS (pour tester l'application il faut un noeud local ipfs et mettre à jour IPFSConfig dans config.ts ), et le `cidHash` (identifiant unique du fichier sur IPFS) est récupéré et utilisé comme métadonnée essentielle du NFT.
+
     
+    - IPFS Storage via Pinata: Pinata (https://www.pinata.cloud/)  is used to store and manage digital assets on the InterPlanetary File System (IPFS). Pinata is a cloud-based service that provides an easier way to upload and manage files on IPFS, ensuring robust and decentralized storage solutions.
+
 
 3. **Mintage du NFT** :
     - Un NFT (token) est créé au contrat, contenant `cidHash` comme référence au `encryptedFile`. // _C'est réalisé par la fonction_ `mintToken(cidHash)` _dans_ `contract.ts`. 
@@ -108,4 +111,6 @@ Ainsi, pour la grande majorité des shared-with Alices qui n'ont pas réellement
 * The frontend design of this project was adapted from
 https://github.com/judygab/web-dev-projects/tree/main/personal-portfolio
 
-* smart contracts were implemented using TFHE by zama https://github.com/zama-ai/fhevm
+* Smart contracts were implemented using TFHE by zama https://github.com/zama-ai/fhevm
+
+* Banner image from taken https://www.zama.ai/fhevm

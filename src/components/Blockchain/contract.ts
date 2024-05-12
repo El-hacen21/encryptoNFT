@@ -6,8 +6,8 @@ export const contractAddress = '0x7cd4E7ECa3C940ab3419d38892D90C2f0E7eaD8f';
 
 // Declare global variables for provider, signer, and contract
 let provider: BrowserProvider | null;
-let signer: Signer | null ;
-let contract: Contract | null ;
+let signer: Signer | null;
+let contract: Contract | null;
 
 // Function to initialize provider and signer asynchronously
 async function initializeProviderAndSigner() {
@@ -157,6 +157,18 @@ export async function getSharedTokensInRange(start: number, count: number): Prom
 	}
 }
 
+export async function getSharedWithAddresses(tokenId: number): Promise<string[]> {
+
+	try {
+		const addresses: string[] = await contract?.getSharedWithAddresses(tokenId);
+		return addresses;
+	} catch (error) {
+		console.error('Error fetching shared addresses:', error);
+		return [];
+	}
+}
+
+
 export async function transferToken(tokenId: number, to: string,): Promise<Boolean> {
 	try {
 		// Call the contract's transferToken function
@@ -173,13 +185,6 @@ export async function transferToken(tokenId: number, to: string,): Promise<Boole
 }
 
 
-/**
- * Shares a token with multiple recipients.
- *
- * @param to An array of recipient addresses to share the token with.
- * @param tokenId The ID of the token to be shared.
- * @returns `true` if the transaction succeeds, `false` otherwise.
- */
 export async function shareToken(to: string, tokenId: number): Promise<boolean> {
 	try {
 		// Ensure the array is not empty
@@ -264,3 +269,31 @@ export async function reencrypt(tokenId: number, encryptedFileKey: Uint8Array[],
 		return [];
 	}
 }
+
+export async function revokeTokenAccess(tokenId: number, userAddress: string): Promise<Boolean> {
+
+	try {
+		const tx = await contract?.revokeTokenAccess(tokenId, userAddress);
+		await tx.wait();
+		return true;
+	} catch (error) {
+		console.error('Error revoking access:', error);
+		return false;
+	}
+}
+
+export async function revokeAllSharedAccess(tokenId: number): Promise<Boolean> {
+
+	try {
+		const tx = await contract?.revokeAllSharedAccess(tokenId);
+		await tx.wait();
+		return true;
+	} catch (error) {
+		console.error('Error revoking all shared access:', error);
+		return false;
+	}
+}
+
+
+
+
