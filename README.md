@@ -69,7 +69,7 @@ In more detail, the function `displayGallery` performs automatically the followi
       `// This function is borrowed from `[fhevmjs.ts](https://github.com/zama-ai/fhevm-react-template/blob/main/src/fhevmjs.ts).
       `// The strange syntax ("getSignature") is because the output ("reencryption")  of this function is actually the "publicKey" concatenated with a signature ("signature") issued by the Shared-with on the "publicKey".`
    
-2. **Réencryption puis Décryption de la fileKey** :
+2. **Reencryption then Decryption of the fileKey** :
     - Reencryption of the `encryptedFileKey` into the encryption key `publicKey`, to obtain `reEncryptedFileKey`.<br />
     `// The reencryption query to the fhEVM is done by the function "reencrypt" in "contract.sol".
         It is this function which controls the access: it checks that the signer ("signer") of the public key ("publicKey") is member of the list ("sharedAccess[tokenId]") of the Shared-with of the token .`<br /><br />
