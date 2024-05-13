@@ -13,14 +13,14 @@ Summarizing, the graphical interface [Mint.tsx](/src/components/Mint/Mint.tsx) a
   - Then, upload of `ciphFile` on IPFS, concatenated with an encryption of the `fileKey` (`encryptedFileKey`) under the fhEVM public key attached to the contract.
     > Hence, controlling access to the secret content "file" is equivalent to controlling access to the "fileKey".
   - Finally, minting of the NFT associated to the `encryptedFileKey`.
-    > The contract will do the access control to the "encryptedFileKey", thanks to the power of the fhEVM to privately decrypt the "encryptedFileKey" into a "fileKey", to a predetermined list of so-called Shared-with users (identified by their Ethereum addresses).
+    > The contract will do the access control to the "fileKey", thanks to the power of the fhEVM to privately decrypt the "encryptedFileKey" into  "fileKey", to a predetermined list of so-called Shared-with users (identified by their Ethereum addresses).
 
 
 In detail: the Creator uploads a secret content (`file`) in the graphical interface. This upload calls `EncryptThenMint` in [Mint.tsx](/src/components/Mint/Mint.tsx), which automatically performs all the following operations at once:
 
 
 1. **Encryption of the Secret Content**:
-    - A symmetric 256-bit encryption key (`fileKey`) is generated using [AES-CTR algorthim](/src/components/Utils/keyencrypt.ts)
+    - A symmetric 256-bit encryption key (`fileKey`) is [generated](/src/components/Utils/keyencrypt.ts)
       ```javascript 
       const fileKey = await generateKey();
       ```
@@ -40,7 +40,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       ```
       encryptedFile <-- (ciphFile|encryptedFileKey). 
       ```
-      > For more details on how `CiphFile` and `EncryptedFile` are defined, see [utils.ts](/src/components/Utils/utils.ts).
+      >  for more details on how `CiphFile` and `EncryptedFile` are generated ser [utils.ts](/src/components/Utils/utils.ts).
 
 
 
@@ -63,9 +63,6 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       We will detail later the trick enabling the contract to control acces to `fileKey` despite storing only the hash of the `encryptedFileKey`. 
 
     - Finally, an NFT (token) is created (or minted) through the contract, with an IPFS reference to the `encryptedFile`.
-      ```javascript
-      const token = await mintToken(cidHash, hashedEncryptedFileKey);
-      ```
       ```javascript 
       const token = await mintToken(cidHash, hashedEncryptedFileKey);
       ```
@@ -108,7 +105,7 @@ In more detail, the function `displayGallery` automatically performs the followi
       
    
 2. **Reencryption then Decryption of the fileKey** :
-    - Reencryption of the `encryptedFileKey` into the encryption key `publicKey`, to obtain `reEncryptedFileKey`.
+    - Reencryption of the `encryptedFileKey` under the encryption key `publicKey`, to obtain `reEncryptedFileKey`.
   
       > The reencryption query to the fhEVM is done by the function :
       ```
