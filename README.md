@@ -173,7 +173,7 @@ As soon as such a membership operator will be shipped, we will be able to implem
 
 
 ## Overview of the Code Implementation
-- The smart contract was implemented using [Remix](https://remix.zama.ai/). It has been thoroughly tested to ensure reliability and robustness before being deployed to the Zama Devnet. [contract.ts](/src/components/Blockchain/contract.tsx) handles the interactions with the deployed contract.
+- The smart contract was implemented using [Remix](https://remix.zama.ai/). It has been thoroughly tested to ensure reliability and robustness before being deployed to the Zama Devnet. [contract.ts](/src/components/Blockchain/contract.ts) handles the interactions with the deployed contract.
 
 - To ensure global accessibility of the created instance throughout the application, we utilize the [FhevmContext.tsx](/src/components/Context/FhevmContext.tsx). This context management strategy helps maintain state across different components effectively. Additionally, [NFTContext.tsx](/src/components/Context/NFTContext.tsx) is created to optimize how NFTs are displayed in the gallery, enhancing the visual presentation and interaction.
 
