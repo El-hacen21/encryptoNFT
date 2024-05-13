@@ -188,7 +188,7 @@ As soon as such a membership operator will be shipped, we will be able to implem
   * To start the development server: `npm run dev`
   * To build the application for production: `npm run build`
   
-- If you encounter the error ReferenceError: Buffer is not defined, as anticipated by Zama, [here](https://docs.zama.ai/fhevm/guides/webpack), adding the following two lines into [main.ts](/src/main.tsx) should resolved the issue:
+- If you encounter the error ReferenceError: Buffer is not defined, as anticipated by Zama, [here](https://docs.zama.ai/fhevm/guides/webpack), adding the following two lines into [main.tsx](/src/main.tsx) should resolved the issue:
   
   ```javascript 
   import { Buffer as BufferPolyfill } from "buffer/";
