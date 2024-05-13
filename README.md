@@ -69,7 +69,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       ```javascript 
       const token = await mintToken(cidHash, hashedEncryptedFileKey);
       ```
-      > For more details refer to the function  `mintToken(string calldata cidHash, bytes32 encryptedKeyHash)` in [contract.sol]((/src/components/Blockchain/contract.sol)).
+      > For more details refer to the function  `mintToken(string calldata cidHash, bytes32 encryptedKeyHash)` in [contract.sol](/src/components/Blockchain/contract.sol).
    
       
 ## II. Management of the NFT
