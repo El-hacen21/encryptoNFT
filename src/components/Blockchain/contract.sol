@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "fhevm/abstracts/Reencrypt.sol";
 import "fhevm/lib/TFHE.sol";
 
-contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
+contract FDRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // Enable the use of EnumerableSet's functionality for UintSet and AddressSet.
     // This allows us to use set operations like add, remove, and contains, which
     // are useful for managing unique collections of unsigned integers and addresses.
@@ -48,8 +48,8 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
 
 
     // Constants for token name and symbol
-    string private constant _TOKEN_NAME = "DRMNFT";
-    string private constant _TOKEN_SYMBOL = "DRM";
+    string private constant _TOKEN_NAME = "NFTDRM";
+    string private constant _TOKEN_SYMBOL = "FDRM";
 
     // Constructor initializes the ERC721 token with a name and a symbol and sets the owner
     constructor() ERC721(_TOKEN_NAME, _TOKEN_SYMBOL) Ownable(msg.sender) {

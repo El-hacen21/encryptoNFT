@@ -152,8 +152,6 @@ export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
       throw new Error(`IPFS upload failed: ${response.statusText}`);
     }
 
-    // Log the response data from Pinata (contains IPFS hash and more)
-    console.log('File uploaded to IPFS via Pinata:', response.data);
 
     // Construct the URL to access the file via an IPFS gateway
     return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
