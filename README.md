@@ -101,7 +101,7 @@ In more detail, the function `displayGallery` automatically performs the followi
        const reencryption = await getSignature(contract.contractAddress, account);
        ```
 
-      > The output of `getSignature` is called `reencryption` : it is the tuple of the `publicKey` concatenated with a signature (`signature`) issued by the _shared-with_ on the `publicKey`.
+      > The output of `getSignature` is called `reencryption` : it is the  `publicKey` concatenated with a signature (`signature`) issued by the _shared-with_ on the `publicKey`.
       
    
 2. **Reencryption then Decryption of the fileKey** :
