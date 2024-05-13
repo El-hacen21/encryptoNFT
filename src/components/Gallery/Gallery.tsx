@@ -36,16 +36,6 @@ export const Gallery = () => {
         }
     };
 
-    const handleSharedWith = async (tokenId: number) => {
-        // setIsShareWithModalOpen(true);
-
-        // const response = await contract.shareToken(to, tokenId);
-
-        // if (response) {
-        //     toast.success(`The NFT#${tokenId} has been share with : ${to.substring(0, 8)}`);
-
-        // } else {
-    };
 
     const handleTransfer = async (tokenId: number, to: string) => {
         const response = await contract.transferToken(tokenId, to);
@@ -253,7 +243,6 @@ export const Gallery = () => {
                                         <ActionButtonHelper
                                             onDownload={() => downloadFile(token.file)}
                                             onShare={(to) => handleShare(token.id, to)}
-                                            onSharedWith={() => handleSharedWith(token.id)}
                                             onTransfer={(to) => handleTransfer(token.id, to)}
                                             onDelete={() => handleDelete(token.id)}
                                             tokenId={token.id}

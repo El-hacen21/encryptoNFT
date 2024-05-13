@@ -50,7 +50,7 @@ const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ show, onHide }) => {
 
                 <h3>Need Help?</h3>
                 <p>
-                    If you need further assistance, feel free to check our <a href="https://github.com/El-hacen21/zama_bounty/">Documentation</a>.
+                    If you need further details, feel free to check our <a href="https://github.com/El-hacen21/zama_bounty/">documentation</a>.
                 </p>
             </Modal.Body>
             <Modal.Footer>

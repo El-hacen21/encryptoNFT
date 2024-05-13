@@ -7,11 +7,9 @@ export default defineConfig({
   base: '/zama_bounty/',
   optimizeDeps: {
     esbuildOptions: {
-      // Node.js global to browser globalThis
       define: {
         global: 'globalThis'
       },
-      // No need for Buffer polyfill plugin
     }
   }, 
   

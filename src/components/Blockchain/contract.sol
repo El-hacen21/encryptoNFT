@@ -26,6 +26,10 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // efficient operations to manage the collection of owned tokens.
     mapping(address => EnumerableSet.UintSet) internal ownerTokens;
 
+     // Maps each token ID to its encrypted key hash.
+    mapping(uint256 => bytes32) internal tokenEncryptedKeyHashes;
+
+
     // Maps each token ID to a dynamic mapping where each address points to a boolean
     // value indicating whether that address has been granted shared access to the token.
     // This is public, allowing for external visibility into access rights for each token.
@@ -42,8 +46,6 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // as it allows quick enumeration and modification of all users who have access to a specific token.
     mapping(uint256 => EnumerableSet.AddressSet) internal tokenSharedWithUsers;
 
-    // Maps each token ID to its encrypted key hash.
-    mapping(uint256 => bytes32) internal tokenEncryptedKeyHashes;
 
     // Constants for token name and symbol
     string private constant _TOKEN_NAME = "DRMNFT";
@@ -179,10 +181,12 @@ contract DRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     function revokeTokenAccess(uint256 tokenId, address user)
         public
         onlyTokenOwner(tokenId)
+        requireNonZeroAddress(user)
     {
         require(sharedAccess[tokenId][user], "Access not granted.");
         sharedAccess[tokenId][user] = false;
         sharedTokens[user].remove(tokenId);
+        tokenSharedWithUsers[tokenId].remove(user);
     }
 
     // function to revoke all shared access for a token

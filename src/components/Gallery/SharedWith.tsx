@@ -29,7 +29,7 @@ export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, on
     const isSuccessRevoke = await revokeTokenAccess(tokenId, address);
 
     if (isSuccessRevoke) {
-      toast.success(`Revoke access for ${formatAddress(address)} on NFT${tokenId} has succeeded!`);
+      toast.success(`Revoke access for ${formatAddress(address)} on NFT#${tokenId} has succeeded!`);
       setSharedAddresses(prev => prev.filter(item => item !== address));
     }
 
@@ -37,15 +37,14 @@ export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, on
 
   const handleRevokeAllAccess = async () => {
     if (sharedAddresses.length == 0) {
-      toast.error(`No shared access for ${tokenId} !`);
+      toast.error(`No shared access for NFT#${tokenId} !`);
     } else {
       const isSuccessRevokeAll = await revokeAllSharedAccess(tokenId);
       if (isSuccessRevokeAll) {
-        toast.success(`Revoke all access for token NFT${tokenId} has succeeded!`);
+        toast.success(`Revoke all access for token NFT#${tokenId} has succeeded!`);
         setSharedAddresses([]);
       }
     }
-
   };
 
   return (

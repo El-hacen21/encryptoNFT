@@ -13,10 +13,8 @@ if (import.meta.env.MODE !== 'development') {
   // console.error = () => {};
 }
 
-// main.ts or index.ts or App.ts
-import { Buffer as BufferPolyfill } from "buffer/";
 
-// Type assertion
+import { Buffer as BufferPolyfill } from "buffer/";
 (window as any).Buffer = BufferPolyfill;
 
 

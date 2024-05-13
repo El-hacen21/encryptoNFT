@@ -2,7 +2,7 @@
 import { ethers, Signer, Contract, BrowserProvider } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0x7cd4E7ECa3C940ab3419d38892D90C2f0E7eaD8f';
+export const contractAddress = '0xFCF2D396972965227141832Db4d14b2F6c060dc4';
 
 // Declare global variables for provider, signer, and contract
 let provider: BrowserProvider | null;

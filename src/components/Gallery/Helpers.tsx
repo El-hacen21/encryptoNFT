@@ -25,17 +25,13 @@ export function getFileIcon(mimeType: string) {
 
 
 export function formatAddress(address: string, charsToShow: number = 6): string {
-    // Check if the provided address is shorter than twice the number of charsToShow + 2 for the ellipsis.
-    // If so, return the address as is.
     if (address.length < 2 * charsToShow + 2) {
         return address;
     }
 
-    // Extract the beginning and end parts of the address.
     const start = address.substring(0, charsToShow);
     const end = address.substring(address.length - charsToShow);
 
-    // Return the formatted address.
     return `${start}...${end}`;
 }
 
@@ -67,13 +63,12 @@ export function formatFileSize(bytes: number, decimals = 2) {
 interface ActionButtonProps {
     onDownload: () => void;
     onShare: (recipientAddress: string) => void;
-    onSharedWith: (tokenId: number) => void;
     onTransfer: (recipientAddress: string) => void;
     onDelete: () => void;
     tokenId?: number;
 }
 
-export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, onShare, onSharedWith, onTransfer, onDelete, tokenId = 0 }) => {
+export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, onShare, onTransfer, onDelete, tokenId = 0 }) => {
     const [showCofirmModal, setShowCofirmModal] = useState(false);
     const [showSharedWithModal, setShowSharedWithModal] = useState(false);
     const [actionType, setActionType] = useState<string>('');
@@ -101,7 +96,7 @@ export const ActionButtonHelper: React.FC<ActionButtonProps> = ({ onDownload, on
 
     const handleSharedWith = () => {
         setShowSharedWithModal(true);
-        onSharedWith(tokenId);
+        // onSharedWith(tokenId);
 
     };
 

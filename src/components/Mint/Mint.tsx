@@ -54,7 +54,6 @@ export const Mint = () => {
       toast.info("Your file is currently being minted as an NFT. This may take a few moments.");
 
       const hashedEncryptedFileKey = await fileKeyHashing(encryptedFileKey);
-      console.log("hashedEncryptedFileKey:: ", hashedEncryptedFileKey);
       const token = await mintToken(cidHash, hashedEncryptedFileKey);
 
       if (token) {
