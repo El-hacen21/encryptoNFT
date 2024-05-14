@@ -74,13 +74,26 @@ export const Gallery = () => {
 
     const displayGallery = async (): Promise<void> => {
         setShowGallery(true);
-        if (nfts) {
-            displayMyNFTs();
-        } else {
-            toast.info('You have no NFTs to display!');
-            return;
+        try {
+            if (nfts) {
+                displayMyNFTs();
+            } else {
+                toast.info('You have no NFTs to display!');
+                return;
+            }
+        } catch (error) {
+            toast.error("Error during NFTs fetch. This could be due to browser extensions, firewall settings, or security policies blocking these requests.");
+            throw error;
         }
-        displaySharedWithMeNFTs();
+
+        try {
+            displaySharedWithMeNFTs();
+        }
+        catch (error) {
+            toast.error("Error during shared with NFTs fetch. This could be due to browser extensions, firewall settings, or security policies blocking these requests.");
+            throw error;
+        }
+
     }
 
     const displayMyNFTs = async (): Promise<void> => {
@@ -123,8 +136,9 @@ export const Gallery = () => {
             // console.log("updatedTokens :: ", updatedNFTs);
 
         } catch (error) {
-            console.error("Error during NFT fetch or decryption:", error);
+            throw error;
         }
+
     };
 
 
@@ -158,34 +172,44 @@ export const Gallery = () => {
             toast.success('Shared NFTs updated successfully!');
 
         } catch (error) {
-            console.error("Error during NFT fetch or decryption:", error);
+            toast.error('Error during NFT fetch or decryption!');
+            throw error;
         }
     };
 
 
 
     const accessFile = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
-        if (!instance) throw new Error("Intance retrieval failed.");
 
-        const encryptedFile = await getEncryptedFileCidHash(cidHash);
-        if (!encryptedFile) throw new Error("Dencrypting data failed.");
+        try {
+            if (!instance) throw new Error("Intance retrieval failed.");
 
-        const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
+            const encryptedFile = await getEncryptedFileCidHash(cidHash);
+            if (!encryptedFile) throw new Error("Dencrypting data failed.");
+
+            const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
 
-        const reEncryptedFileKey = await contract.reencrypt(tokenId, encryptedKeys, publicKey, signature);
-        let decryptedKey: bigint[] = [];
+            const reEncryptedFileKey = await contract.reencrypt(tokenId, encryptedKeys, publicKey, signature);
+            let decryptedKey: bigint[] = [];
 
-        reEncryptedFileKey.forEach((element) => {
-            if (element) {
-                const result = instance.decrypt(contract.contractAddress, element);
-                decryptedKey.push(result);
-            }
-        });
+            reEncryptedFileKey.forEach((element) => {
+                if (element) {
+                    const result = instance.decrypt(contract.contractAddress, element);
+                    decryptedKey.push(result);
+                }
+            });
 
-        const fileKey = await importCryptoKey(decryptedKey);
-        const decryptedFile = await decryptFile(encryptedFile, fileKey);
-        return decryptedFile;
+            toast.error('Error during NFT fetch or decryption!');
+
+            const fileKey = await importCryptoKey(decryptedKey);
+            const decryptedFile = await decryptFile(encryptedFile, fileKey);
+            return decryptedFile;
+
+        } catch (error) {
+            toast.error('Error Wile trying to access the NFTs!');
+            throw error;
+        }
     };
 
 
@@ -239,7 +263,6 @@ export const Gallery = () => {
                                     <td>{getFileIcon(token.file.type)} {token.file.name}</td>
                                     <td >{formatFileSize(token.file.size)}</td>
                                     <td >
-                                        {/* Action button */}
                                         <ActionButtonHelper
                                             onDownload={() => downloadFile(token.file)}
                                             onShare={(to) => handleShare(token.id, to)}
@@ -247,13 +270,13 @@ export const Gallery = () => {
                                             onDelete={() => handleDelete(token.id)}
                                             tokenId={token.id}
                                         />
-                                        
+
                                     </td>
 
                                 </tr>
                             ))}
                         </tbody>
-                        
+
                     </Table>
 
                     <Pagination className="justify-content-center mt-4">
