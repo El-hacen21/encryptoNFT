@@ -97,13 +97,9 @@ export const Gallery = () => {
     }
 
     const displayMyNFTs = async (): Promise<void> => {
-
-        if (!instance) {
-            console.error('Instance is not ready');
-            return;
-        }
-
         try {
+            if (!instance) throw new Error("Intance retrieval failed.");
+
             // Fetch total number of NFTs to manage pagination or UI elements
             const total = await contract.getSupply();
             setMyTotalNFTs(total);
@@ -133,7 +129,6 @@ export const Gallery = () => {
             // Update context with new tokens
             updateNFTs(updatedNFTs);
             toast.success('Gallery updated successfully!');
-            // console.log("updatedTokens :: ", updatedNFTs);
 
         } catch (error) {
             throw error;
@@ -172,12 +167,9 @@ export const Gallery = () => {
             toast.success('Shared NFTs updated successfully!');
 
         } catch (error) {
-            toast.error('Error during NFT fetch or decryption!');
             throw error;
         }
     };
-
-
 
     const accessFile = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
 
@@ -199,8 +191,6 @@ export const Gallery = () => {
                     decryptedKey.push(result);
                 }
             });
-
-            toast.error('Error during NFT fetch or decryption!');
 
             const fileKey = await importCryptoKey(decryptedKey);
             const decryptedFile = await decryptFile(encryptedFile, fileKey);
