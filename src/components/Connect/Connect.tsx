@@ -164,7 +164,7 @@ export const Connect: React.FC<{
           Connect Wallet
         </button>
       ) : (
-         <span onClick={()=>copyAddressToClipboard(account)} title={copySuccess}> Connected: {account.substring(0, 5)}...{account.substring(account.length - 4)} <Copy /> </span>
+        <span onClick={() => copyAddressToClipboard(account)} title={copySuccess}> Connected: {account.substring(0, 5)}...{account.substring(account.length - 4)} <Copy /> </span>
       )}
     </div>
   );

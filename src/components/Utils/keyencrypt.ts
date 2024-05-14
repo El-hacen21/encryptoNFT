@@ -9,7 +9,7 @@ export const encryptionAlgorithm = {
 
 };
 
-// Correct encryptionAlgorithm specification for generating an AES key
+// encryptionAlgorithm specification for generating an AES key
 const keyAlgorithm = {
   name: "AES-CTR",
   length: 256,  // Specifies the length of the key in bits

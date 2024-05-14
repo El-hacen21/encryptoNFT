@@ -43,9 +43,10 @@ export const Mint = () => {
       const account = await getAccount();
       if (!account) throw new Error("Account retrieval failed.");
       if (!instance) throw new Error("Intance retrieval failed.");
+      
+      const ciphFile = await encryptFile(file, fileKey);
 
       const encryptedFileKey = await fileKeyEncryption(fileKey);
-      const ciphFile = await encryptFile(file, fileKey);
 
       const encryptedFile = { ...ciphFile, encryptedFileKey };
 
