@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - master  
+      - master
 
 jobs:
   build:
@@ -16,7 +16,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18' 
+          node-version: '18'
+
+      - name: Load environment variables
+        run: echo "VITE_APP_BASE_URL=/your-repo-name/" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm install

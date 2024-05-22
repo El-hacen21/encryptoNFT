@@ -324,11 +324,9 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<st
 
 
 export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
-  const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string; // Ensure you set this in your .env files
-  const fullUrl = `${DEDICATED_IPFS_URL}/ipfs/${cidHash}`;
-
+  
   try {
-    const response = await fetch(fullUrl, {
+    const response = await fetch(cidHash, {
       headers: {
         'Accept': 'application/json',
       }
