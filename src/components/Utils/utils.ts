@@ -2,6 +2,11 @@
 import { convertCounterObjectToUint8Array, readFileAsArrayBuffer, arrayBufferToFile, base64ToArrayBuffer, bufferToBase64 } from './other';
 import { encryptionAlgorithm } from './keyencrypt'
 import axios from 'axios';
+import { create } from 'ipfs-http-client';
+
+
+const isDevelopment = import.meta.env.MODE === 'development';
+const baseProxyUrl = isDevelopment ? '' : 'https://zamabounty.diallosegue.workers.dev/proxy';
 
 
 export interface CiphFile {
@@ -12,7 +17,6 @@ export interface CiphFile {
     counter: Uint8Array;
     length: number;
   };
-
 }
 
 export interface EncryptedFile extends CiphFile {
@@ -121,6 +125,8 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
 }
 
 
+
+
 export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
   const ipfsApiKey = import.meta.env.VITE_PINATA_API_KEY;
   const PINATA_API_URL="https://api.pinata.cloud/pinning/pinFileToIPFS";
@@ -162,20 +168,64 @@ export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
 };
 
 
-// Function to fetch encrypted file data using a CID hash
 export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
   try {
-    const response = await axios.get(cidHash); // Assuming cidHash is the full URL to the resource
+    const response = await axios.get(cidHash);
     if (response.data) {
-      // Assuming the response.data is already in the format of CiphFile ,
       return response.data as EncryptedFile;
     } else {
       throw new Error("No data returned from the server.");
     }
   } catch (error) {
     console.error("Error fetching data:", error);
-    // Rethrowing the error to handle it further up the call stack or to notify the user appropriately.
     throw error;
   }
 }
+
+export const uploadFileToLocalIPFS = async (encryptedFile: EncryptedFile) => {
+  const ipfs = create({ url: 'http://localhost:5001' });
+
+  // Convert the encrypted file to a JSON string and encode it
+  const encryptedFileString = JSON.stringify(encryptedFile);
+  const encoder = new TextEncoder();
+  const fileArrayBuffer = encoder.encode(encryptedFileString);
+
+  // Create a Blob from the encoded ArrayBuffer
+  const file = new Blob([fileArrayBuffer], { type: 'application/json' });
+
+  try {
+    // Add the file to IPFS
+    const result = await ipfs.add(file);
+
+    if (!result || !result.path) {
+      throw new Error('IPFS upload failed');
+    }
+
+    // Use the local IPFS gateway URL to access the file
+    return `http://localhost:8080/ipfs/${result.path}`;
+  } catch (error) {
+    console.error('Error uploading to IPFS:', error);
+    throw error;
+  }
+};
+
+
+// // Function to fetch encrypted file data using a CID hash
+// export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
+//   try {
+//     const response = await axios.get(cidHash); // Assuming cidHash is the full URL to the resource
+//     if (response.data) {
+//       // Assuming the response.data is already in the format of CiphFile ,
+//       return response.data as EncryptedFile;
+//     } else {
+//       throw new Error("No data returned from the server.");
+//     }
+//   } catch (error) {
+//     console.error("Error fetching data:", error);
+//     // Rethrowing the error to handle it further up the call stack or to notify the user appropriately.
+//     throw error;
+//   }
+// };
+
+
 

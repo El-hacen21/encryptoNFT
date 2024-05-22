@@ -6,7 +6,7 @@ import { useFhevm } from '../Contexts/FhevmContext';
 import { mintToken, getAccount } from '../Blockchain/contract'
 import { exportCryptoKey, generateKey } from '../Utils/keyencrypt'
 import { useNFTs, NFTContent } from '../Contexts/NFTContext';
-import { encryptFile, uploadFileToIPFS } from '../Utils/utils'
+import { encryptFile, uploadFileToIPFS, uploadFileToLocalIPFS } from '../Utils/utils'
 import { toast } from 'react-toastify'
 import { keccak256 } from 'js-sha3';
 
@@ -43,14 +43,14 @@ export const Mint = () => {
       const account = await getAccount();
       if (!account) throw new Error("Account retrieval failed.");
       if (!instance) throw new Error("Intance retrieval failed.");
-      
+
       const ciphFile = await encryptFile(file, fileKey);
 
       const encryptedFileKey = await fileKeyEncryption(fileKey);
 
       const encryptedFile = { ...ciphFile, encryptedFileKey };
 
-      const cidHash = await uploadFileToIPFS(encryptedFile);
+      const cidHash = await uploadFileToLocalIPFS(encryptedFile);
 
       toast.info("Your file is currently being minted as an NFT. This may take a few moments.");
 
@@ -76,6 +76,7 @@ export const Mint = () => {
     const keySegments = await exportCryptoKey(fileKey);
     for (const segment of keySegments) {
       const encrypted = instance.encrypt64(segment);
+      console.log("ecrypted64 : ", encrypted);
       encryptedFileKey.push(encrypted);
     }
 

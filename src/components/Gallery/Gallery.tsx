@@ -75,12 +75,7 @@ export const Gallery = () => {
     const displayGallery = async (): Promise<void> => {
         setShowGallery(true);
         try {
-            if (nfts) {
-                displayMyNFTs();
-            } else {
-                toast.info('You have no NFTs to display!');
-                return;
-            }
+            displayMyNFTs();
         } catch (error) {
             toast.error("Error during NFTs fetch. This could be due to browser extensions, firewall settings, or security policies blocking these requests.");
             throw error;
@@ -97,6 +92,10 @@ export const Gallery = () => {
     }
 
     const displayMyNFTs = async (): Promise<void> => {
+        if (!nfts) {
+            toast.info('You have no NFTs to display!');
+            return;
+        }
         try {
             if (!instance) throw new Error("Intance retrieval failed.");
 
@@ -131,6 +130,7 @@ export const Gallery = () => {
             toast.success('Gallery updated successfully!');
 
         } catch (error) {
+            toast.error('Error displaying Gallery!');
             throw error;
         }
 
@@ -179,6 +179,9 @@ export const Gallery = () => {
             const encryptedFile = await getEncryptedFileCidHash(cidHash);
             if (!encryptedFile) throw new Error("Dencrypting data failed.");
 
+            console.log("cid: ", cidHash);
+            console.log("Encrypted FIle: ", encryptedFile);
+
             const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
 
@@ -197,7 +200,7 @@ export const Gallery = () => {
             return decryptedFile;
 
         } catch (error) {
-            toast.error('Error Wile trying to access the NFTs!');
+            toast.error(`Error Wile trying to access the NFT# ${tokenId}. could not fetch ${cidHash}`);
             throw error;
         }
     };

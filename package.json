@@ -17,6 +17,7 @@
     "bootstrap": "^5.3.3",
     "buffer": "^6.0.3",
     "ethers": "^6.12.0",
+    "fhevm": "^0.4.0",
     "gh-pages": "^6.1.1",
     "js-sha3": "^0.9.3",
     "prettier": "^3.0.0",
@@ -40,7 +41,7 @@
     "eslint-plugin-react-refresh": "^0.4.1",
     "fhevmjs": "^0.4.0",
     "typescript": "^5.0.2",
-    "vite": "^5.0.4"
+    "vite": "^5.2.11"
   },
   "homepage": "https://el-hacen21.github.io/zama_bounty/"
 }
