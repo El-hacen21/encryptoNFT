@@ -19,7 +19,7 @@ jobs:
           node-version: '18'
 
       - name: Load environment variables
-        run: echo "VITE_APP_BASE_URL=/your-repo-name/" >> $GITHUB_ENV
+        run: echo "VITE_APP_BASE_URL=/zama_bounty/" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm install
