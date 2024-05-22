@@ -5,8 +5,8 @@ import axios from 'axios';
 import { create } from 'ipfs-http-client';
 
 
-const isDevelopment = import.meta.env.MODE === 'development';
-const baseProxyUrl = isDevelopment ? '' : 'https://zamabounty.diallosegue.workers.dev/proxy';
+// const isDevelopment = import.meta.env.MODE === 'development';
+// const baseProxyUrl = isDevelopment ? '' : 'https://zamabounty.diallosegue.workers.dev/proxy';
 
 
 export interface CiphFile {
@@ -127,45 +127,138 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
 
 
 
-export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
-  const ipfsApiKey = import.meta.env.VITE_PINATA_API_KEY;
-  const PINATA_API_URL="https://api.pinata.cloud/pinning/pinFileToIPFS";
+// export const uploadFileToIPFS = async (encryptedFile:EncryptedFile) => {
+//   const ipfsApiKey = import.meta.env.VITE_PINATA_API_KEY;
+//   const PINATA_API_URL="https://api.pinata.cloud/pinning/pinFileToIPFS";
+
+//   // Prepare the encrypted file as a JSON string
+//   const encryptedFileString = JSON.stringify(encryptedFile);
+//   const encoder = new TextEncoder();
+//   const metadataArrayBuffer = encoder.encode(encryptedFileString);
+//   const formData = new FormData();
+
+//   // Append the encrypted file as a Blob of type 'application/json'
+//   formData.append("file", new Blob([metadataArrayBuffer], { type: 'application/json' }));
+
+//   const pinataOptions = JSON.stringify({
+//     cidVersion: 0, 
+//   });
+//   formData.append('pinataOptions', pinataOptions);
+
+//   try {
+//     // Make an HTTP POST request to Pinata's pinning service
+//     const response = await axios.post(PINATA_API_URL, formData, {
+//       headers: {
+//         'Authorization': `Bearer ${ipfsApiKey}`, 
+//         'Content-Type': `multipart/form-data;`, 
+//       }
+//     });
+
+//     if (response.status !== 200) {
+//       throw new Error(`IPFS upload failed: ${response.statusText}`);
+//     }
+
+
+//     // Construct the URL to access the file via an IPFS gateway
+//     return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+//   } catch (error) {
+//     console.error("Error uploading to IPFS via Pinata:", error);
+//     throw error;
+//   }
+// };
+
+// export const uploadFileToLocalIPFS = async (encryptedFile: EncryptedFile) => {
+//   const ipfs = create({ url: 'http://localhost:5001' });
+
+//   // Convert the encrypted file to a JSON string and encode it
+//   const encryptedFileString = JSON.stringify(encryptedFile);
+//   const encoder = new TextEncoder();
+//   const fileArrayBuffer = encoder.encode(encryptedFileString);
+
+//   // Create a Blob from the encoded ArrayBuffer
+//   const file = new Blob([fileArrayBuffer], { type: 'application/json' });
+
+//   try {
+//     // Add the file to IPFS
+//     const result = await ipfs.add(file);
+
+//     if (!result || !result.path) {
+//       throw new Error('IPFS upload failed');
+//     }
+
+//     // Use the local IPFS gateway URL to access the file
+//     return `http://localhost:8080/ipfs/${result.path}`;
+//   } catch (error) {
+//     console.error('Error uploading to IPFS:', error);
+//     throw error;
+//   }
+// };
+
+
+export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<string> => {
+  const ipfsApiKey = import.meta.env.VITE_PINATA_API_KEY as string;
+  const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
+  const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_URL || 'http://localhost:5001') as string;
+
+  // Determine the environment
+  const isProduction = import.meta.env.MODE === 'production';
 
   // Prepare the encrypted file as a JSON string
   const encryptedFileString = JSON.stringify(encryptedFile);
   const encoder = new TextEncoder();
-  const metadataArrayBuffer = encoder.encode(encryptedFileString);
+  const fileArrayBuffer = encoder.encode(encryptedFileString);
   const formData = new FormData();
 
   // Append the encrypted file as a Blob of type 'application/json'
-  formData.append("file", new Blob([metadataArrayBuffer], { type: 'application/json' }));
+  formData.append("file", new Blob([fileArrayBuffer], { type: 'application/json' }));
 
-  const pinataOptions = JSON.stringify({
-    cidVersion: 0, 
-  });
-  formData.append('pinataOptions', pinataOptions);
-
-  try {
-    // Make an HTTP POST request to Pinata's pinning service
-    const response = await axios.post(PINATA_API_URL, formData, {
-      headers: {
-        'Authorization': `Bearer ${ipfsApiKey}`, 
-        'Content-Type': `multipart/form-data;`, 
-      }
+  if (isProduction) {
+    // Production: Upload to Pinata
+    const pinataOptions = JSON.stringify({
+      cidVersion: 0,
     });
+    formData.append('pinataOptions', pinataOptions);
 
-    if (response.status !== 200) {
-      throw new Error(`IPFS upload failed: ${response.statusText}`);
+    try {
+      const response = await axios.post(PINATA_API_URL, formData, {
+        headers: {
+          'Authorization': `Bearer ${ipfsApiKey}`,
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`IPFS upload failed: ${response.statusText}`);
+      }
+
+      // Construct the URL to access the file via an IPFS gateway
+      return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+    } catch (error) {
+      console.error("Error uploading to IPFS via Pinata:", error);
+      throw error;
     }
+  } else {
+    // Development: Upload to local IPFS
+    const ipfs = create({ url: LOCAL_IPFS_URL });
 
+    try {
+      // Add the file to IPFS
+      const result = await ipfs.add(formData.get('file') as Blob);
 
-    // Construct the URL to access the file via an IPFS gateway
-    return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
-  } catch (error) {
-    console.error("Error uploading to IPFS via Pinata:", error);
-    throw error;
+      if (!result || !result.path) {
+        throw new Error('IPFS upload failed');
+      }
+
+      // Use the local IPFS gateway URL to access the file
+      return `http://localhost:8080/ipfs/${result.path}`;
+    } catch (error) {
+      console.error('Error uploading to IPFS:', error);
+      throw error;
+    }
   }
 };
+
+
 
 
 export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
@@ -182,32 +275,6 @@ export async function getEncryptedFileCidHash(cidHash: string): Promise<Encrypte
   }
 }
 
-export const uploadFileToLocalIPFS = async (encryptedFile: EncryptedFile) => {
-  const ipfs = create({ url: 'http://localhost:5001' });
-
-  // Convert the encrypted file to a JSON string and encode it
-  const encryptedFileString = JSON.stringify(encryptedFile);
-  const encoder = new TextEncoder();
-  const fileArrayBuffer = encoder.encode(encryptedFileString);
-
-  // Create a Blob from the encoded ArrayBuffer
-  const file = new Blob([fileArrayBuffer], { type: 'application/json' });
-
-  try {
-    // Add the file to IPFS
-    const result = await ipfs.add(file);
-
-    if (!result || !result.path) {
-      throw new Error('IPFS upload failed');
-    }
-
-    // Use the local IPFS gateway URL to access the file
-    return `http://localhost:8080/ipfs/${result.path}`;
-  } catch (error) {
-    console.error('Error uploading to IPFS:', error);
-    throw error;
-  }
-};
 
 
 // // Function to fetch encrypted file data using a CID hash
