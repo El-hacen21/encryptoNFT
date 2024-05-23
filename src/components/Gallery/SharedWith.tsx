@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, ListGroup } from 'react-bootstrap';
-import { getSharedWithAddresses, revokeTokenAccess, revokeAllSharedAccess } from '../Blockchain/contract';
+import { getSharedWithAddresses, revokeTokenAccess, revokeAllSharedAccess, getMaxUsersToRemove } from '../Blockchain/contract';
 import { formatAddress } from './Helpers';
 import { toast } from 'react-toastify'
 
@@ -39,7 +39,8 @@ export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, on
     if (sharedAddresses.length == 0) {
       toast.error(`No shared access for NFT#${tokenId} !`);
     } else {
-      const isSuccessRevokeAll = await revokeAllSharedAccess(tokenId);
+      const maxToRemove = await getMaxUsersToRemove();
+      const isSuccessRevokeAll = await revokeAllSharedAccess(tokenId, maxToRemove);
       if (isSuccessRevokeAll) {
         toast.success(`Revoke all access for token NFT#${tokenId} has succeeded!`);
         setSharedAddresses([]);

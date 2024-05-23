@@ -8,7 +8,6 @@ import { exportCryptoKey, generateKey } from '../Utils/keyencrypt'
 import { useNFTs, NFTContent } from '../Contexts/NFTContext';
 import { encryptFile, uploadFileToIPFS } from '../Utils/utils'
 import { toast } from 'react-toastify'
-import { keccak256 } from 'js-sha3';
 
 
 export const Mint = () => {
@@ -54,8 +53,7 @@ export const Mint = () => {
 
       toast.info("Your file is currently being minted as an NFT. This may take a few moments.");
 
-      const hashedEncryptedFileKey = await fileKeyHashing(encryptedFileKey);
-      const token = await mintToken(cidHash, hashedEncryptedFileKey);
+      const token = await mintToken(cidHash, encryptedFileKey);
 
       if (token) {
         const nftContent: NFTContent = { id: Number(token.tokenId), file: file };
@@ -82,24 +80,6 @@ export const Mint = () => {
 
     return encryptedFileKey;
   };
-
-
-
-  const fileKeyHashing = async (encryptedFileKey: Uint8Array[]): Promise<string> => {
-    let concatenatedHashes = '';
-
-    for (const segment of encryptedFileKey) {
-      const hashHex = keccak256(segment);
-      concatenatedHashes += hashHex;
-    }
-
-    // Hash the concatenated hashes to fit into bytes32
-    const aggregateHash = '0x' + keccak256(concatenatedHashes);
-    return aggregateHash;
-  };
-
-
-
 
 
 

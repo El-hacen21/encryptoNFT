@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
 import * as contract from '../Blockchain/contract';
 import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData } from '../Utils/utils'
-import { deserializeEncryptedKeyParts } from '../Utils/other'
 import { importCryptoKey } from '../Utils/keyencrypt'
 import { useFhevm } from '../Contexts/FhevmContext';
 import { useNFTs, NFTContent } from '../Contexts/NFTContext';
@@ -21,8 +20,7 @@ export const Gallery = () => {
     const ITEMS_PERPAGE = 5; // Cannot be zero
 
     const [showGallery, setShowGallery] = useState(false);
-    const { nfts, removeNFT, updateNFTs } = useNFTs();
-
+    const { nfts, removeNFT, updateNFTs, removeAllNFTs } = useNFTs();
     const [nftsSharedWithMe, setNFTsSharedWithMe] = useState<NFTContent[]>([]);
 
     const handleShare = async (tokenId: number, to: string) => {
@@ -32,13 +30,13 @@ export const Gallery = () => {
             toast.success(`The NFT#${tokenId} has been share with : ${formatAddress(to)}`);
 
         } else {
-            toast.error(`Could not send the NFT#${tokenId}!`);
+            toast.error(`Could not share NFT #${tokenId}! Please check if it is already shared with ${formatAddress(to)}.`);
         }
     };
 
 
-    const handleTransfer = async (tokenId: number, to: string) => {
-        const response = await contract.transferToken(tokenId, to);
+    const handleTransfer = async (tokenId: number, to: string,) => {
+        const response = await contract.transferToken(to, tokenId);
 
         if (response) {
             toast.success(`The NFT#${tokenId} has been transfered and will be no more accessible!`);
@@ -52,7 +50,8 @@ export const Gallery = () => {
 
 
     const handleDelete = async (tokenId: number) => {
-        const response = await contract.burnToken(tokenId);
+        const maxToRemove = await contract.getMaxUsersToRemove();
+        const response = await contract.burnToken(tokenId, maxToRemove);
 
         if (response) {
             toast.success(`The NFT#${tokenId} has been deleted and will be no more accessible!`);
@@ -105,6 +104,7 @@ export const Gallery = () => {
 
             if (total <= 0) {
                 toast.info('You have no NFTs to display!');
+                removeAllNFTs();
                 return;
             }
 
@@ -145,6 +145,7 @@ export const Gallery = () => {
 
             if (totalShareWith <= 0) {
                 toast.info('You have no NFTs shared with you to display!');
+                setNFTsSharedWithMe([]);
                 return;
             }
 
@@ -182,10 +183,10 @@ export const Gallery = () => {
             console.log("cid: ", cidHash);
             console.log("Encrypted FIle: ", encryptedFile);
 
-            const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
+            // const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
 
 
-            const reEncryptedFileKey = await contract.reencrypt(tokenId, encryptedKeys, publicKey, signature);
+            const reEncryptedFileKey = await contract.reencrypt(tokenId, publicKey, signature);
             let decryptedKey: bigint[] = [];
 
             reEncryptedFileKey.forEach((element) => {

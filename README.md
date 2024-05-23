@@ -178,12 +178,20 @@ As soon as such a membership operator will be shipped, we will be able to implem
 
 ## Running the Application
 
-- Access the application through the following URL: [Link to the Application](https://el-hacen21.github.io/zama_bounty/)
+To run the application locally, follow these steps:
+#### Environment Variables
 
-- To run the application locally, follow these steps:
+Copy the example environment variable files and update them with your specific configurations.
+
+```bash
+cp .env.development.example .env.development
+```
+#### Run
+
   * Install all necessary packages: `npm install`
   * To start the development server: `npm run dev`
   * To build the application for production: `npm run build`
+  
   
 - If you encounter the error ReferenceError: Buffer is not defined, as anticipated by Zama, [here](https://docs.zama.ai/fhevm/guides/webpack), adding the following two lines into [main.tsx](/src/main.tsx) should resolved the issue:
   

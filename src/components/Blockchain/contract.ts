@@ -2,7 +2,7 @@
 import { ethers, Signer, Contract, BrowserProvider } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0x75F2155999b46cD9de8d36Ae2DBEB3B1AA52C5b5';
+export const contractAddress = '0x72F2C6EAaAf332999Df158E59Aad670c6d2DA1c8';
 
 // Declare global variables for provider, signer, and contract
 let provider: BrowserProvider | null;
@@ -33,9 +33,6 @@ async function initializeProviderAndSigner() {
 
 // Call the function to initialize provider and signer
 initializeProviderAndSigner();
-
-
-
 
 // Create a contract instance with a signer, which enables sending transactions
 // const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -82,9 +79,9 @@ async function getEvent(
 	return null;
 }
 
-export async function mintToken(cidHash: string, encryptedKeyHash: string): Promise<TokenDetails> {
+export async function mintToken(cidHash: string, encryptedFileKey: Uint8Array[]): Promise<TokenDetails> {
 	try {
-		const txResponse = await contract?.mintToken(cidHash, encryptedKeyHash);
+		const txResponse = await contract?.mintToken(cidHash, encryptedFileKey);
 
 		const tokenMintedEvent = await getEvent(txResponse, 'TokenMinted');
 		if (!tokenMintedEvent) throw new Error('TokenMinted event not found.');
@@ -169,10 +166,10 @@ export async function getSharedWithAddresses(tokenId: number): Promise<string[]>
 }
 
 
-export async function transferToken(tokenId: number, to: string,): Promise<Boolean> {
+export async function transferToken(to: string, tokenId: number): Promise<Boolean> {
 	try {
 		// Call the contract's transferToken function
-		const tx = await contract?.transferToken(tokenId, to);
+		const tx = await contract?.transferToken(to, tokenId);
 
 		// Wait for transaction confirmation
 		await tx.wait();
@@ -207,10 +204,10 @@ export async function shareToken(to: string, tokenId: number): Promise<boolean> 
 
 
 
-export async function burnToken(tokenId: number): Promise<Boolean> {
+export async function burnToken(tokenId: number, limitNumberOfSharedWith: number): Promise<Boolean> {
 	try {
 		// Call the contract's burnToken function
-		const tx = await contract?.burnToken(tokenId);
+		const tx = await contract?.burnToken(tokenId, limitNumberOfSharedWith);
 		console.log('Transaction hash:', tx.hash);
 
 		// Wait for transaction confirmation
@@ -249,14 +246,14 @@ export async function getSharedWithSupply(): Promise<number> {
 
 
 
-export async function reencrypt(tokenId: number, encryptedFileKey: Uint8Array[],
+export async function reencrypt(tokenId: number,
 	publicKey: Uint8Array | undefined,
 	signature: string | undefined,
 
 ): Promise<string[]> {
 
 	try {
-		const data = await contract?.reencrypt(tokenId, encryptedFileKey, publicKey, signature);
+		const data = await contract?.reencrypt(tokenId, publicKey, signature);
 
 		if (!data) {
 			console.error('No return for contract.reencrypt');
@@ -282,15 +279,28 @@ export async function revokeTokenAccess(tokenId: number, userAddress: string): P
 	}
 }
 
-export async function revokeAllSharedAccess(tokenId: number): Promise<Boolean> {
+export async function revokeAllSharedAccess(tokenId: number, limitNumberOfSharedWith: number): Promise<Boolean> {
 
 	try {
-		const tx = await contract?.revokeAllSharedAccess(tokenId);
+		const tx = await contract?.revokeAllSharedAccess(tokenId, limitNumberOfSharedWith);
 		await tx.wait();
 		return true;
 	} catch (error) {
 		console.error('Error revoking all shared access:', error);
 		return false;
+	}
+}
+
+
+
+// Function to get the MAX_USERS_TO_REMOVE value
+export async function getMaxUsersToRemove(): Promise<number> {
+	try {
+		const maxUsersToRemove: number = await contract?.MAX_USERS_TO_REMOVE();
+		return maxUsersToRemove;
+	} catch (error) {
+		console.error("Error fetching MAX_USERS_TO_REMOVE:", error);
+		return 0;
 	}
 }
 

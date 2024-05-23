@@ -9,7 +9,8 @@ interface NFTContextType {
     nfts: NFTContent[];
     addNFT: (nft: NFTContent) => void;
     updateNFTs: (nfts: NFTContent[]) => void;
-    removeNFT: (id: number) => void; 
+    removeNFT: (id: number) => void;
+    removeAllNFTs: () => void; 
 }
 
 const NFTContext = createContext<NFTContextType | undefined>(undefined);
@@ -36,8 +37,13 @@ export const NFTProvider: React.FC<ProviderProps> = ({ children }) => {
         setNfts((prevNfts) => prevNfts.filter((nft) => nft.id !== id));
     };
 
+    // Removes all NFTs
+    const removeAllNFTs = () => {
+        setNfts([]);
+    };
+
     return (
-        <NFTContext.Provider value={{ nfts, addNFT, updateNFTs, removeNFT }}>
+        <NFTContext.Provider value={{ nfts, addNFT, updateNFTs, removeNFT, removeAllNFTs }}>
             {children}
         </NFTContext.Provider>
     );

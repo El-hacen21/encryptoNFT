@@ -26,9 +26,8 @@ contract FDRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // efficient operations to manage the collection of owned tokens.
     mapping(address => EnumerableSet.UintSet) internal ownerTokens;
 
-     // Maps each token ID to its encrypted key hash.
-    mapping(uint256 => bytes32) internal tokenEncryptedKeyHashes;
-
+    // Maps each token ID to its encrypted key hash.
+    mapping(uint256 => mapping(uint8 => euint64)) internal tokenEncryptedKey;
 
     // Maps each token ID to a dynamic mapping where each address points to a boolean
     // value indicating whether that address has been granted shared access to the token.
@@ -46,10 +45,12 @@ contract FDRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     // as it allows quick enumeration and modification of all users who have access to a specific token.
     mapping(uint256 => EnumerableSet.AddressSet) internal tokenSharedWithUsers;
 
-
     // Constants for token name and symbol
     string private constant _TOKEN_NAME = "NFTDRM";
     string private constant _TOKEN_SYMBOL = "FDRM";
+
+    // size limits on the sets to avoid DDOS issues due to excessive gas costs if sets become too big
+    uint8 public constant MAX_USERS_TO_REMOVE = 20;
 
     // Constructor initializes the ERC721 token with a name and a symbol and sets the owner
     constructor() ERC721(_TOKEN_NAME, _TOKEN_SYMBOL) Ownable(msg.sender) {
@@ -57,16 +58,21 @@ contract FDRM is Reencrypt, ERC721URIStorage, Ownable2Step {
     }
 
     // Allows users to mint a new NFT with a specified content identifier hash (CID)
-    function mintToken(string calldata cidHash, bytes32 encryptedKeyHash)
-        external
-        returns (uint256)
-    {
+    function mintToken(
+        string calldata cidHash,
+        bytes[4] calldata encryptedFileKey
+    ) external returns (uint256) {
         require(bytes(cidHash).length > 0, "CID cannot be empty.");
         uint256 tokenId = mintedCounter;
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, cidHash);
         ownerTokens[msg.sender].add(tokenId);
-        tokenEncryptedKeyHashes[tokenId] = encryptedKeyHash;
+
+        for (uint8 i = 0; i < 4; i++) {
+            euint64 fileKeyPart = TFHE.asEuint64(encryptedFileKey[i]);
+            tokenEncryptedKey[tokenId][i] = fileKeyPart;
+        }
+
         mintedCounter++;
         emit TokenMinted(tokenId);
         return tokenId;
@@ -164,17 +170,45 @@ contract FDRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         return users;
     }
 
-    // Function to transfer a token to another address
-    function transferToken(uint256 tokenId, address to)
-        public
-        onlyTokenOwner(tokenId)
-        requireNonZeroAddress(to)
-    {
-        safeTransferFrom(msg.sender, to, tokenId);
+    function transferToken(
+        address to,
+        uint256 tokenId
+    ) public onlyTokenOwner(tokenId) {
+        _safeTransfer(msg.sender, to, tokenId);
 
-        // Use EnumerableSet to remove and add tokens in ownership tracking
         ownerTokens[msg.sender].remove(tokenId);
         ownerTokens[to].add(tokenId);
+
+        // Remove the new owner as a shared with
+        if (sharedAccess[tokenId][to]) {
+            _revokeSharedAccess(tokenId, to);
+        }
+    }
+
+    function _revokeSharedAccess(uint256 tokenId, address user) private {
+        if (sharedAccess[tokenId][user]) {
+            sharedAccess[tokenId][user] = false;
+            sharedTokens[user].remove(tokenId);
+            tokenSharedWithUsers[tokenId].remove(user);
+        }
+    }
+
+    // Function to revoke all shared access for a token with a limit
+    function revokeAllSharedAccess(
+        uint256 tokenId,
+        uint8 limitNumberOfSharedWith
+    ) public onlyTokenOwner(tokenId) {
+        EnumerableSet.AddressSet storage users = tokenSharedWithUsers[tokenId];
+        uint256 numberOfUsers = users.length();
+        uint8 limit = limitNumberOfSharedWith < numberOfUsers
+            ? limitNumberOfSharedWith
+            : uint8(numberOfUsers);
+
+        // Loop over the set and remove each user up to the limit
+        for (uint8 i = 0; i < limit; i++) {
+            address user = users.at(0); // Always remove the first user as the set shrinks
+            _revokeSharedAccess(tokenId, user);
+        }
     }
 
     // Function to revoke shared access to a token for a specific address
@@ -184,102 +218,53 @@ contract FDRM is Reencrypt, ERC721URIStorage, Ownable2Step {
         requireNonZeroAddress(user)
     {
         require(sharedAccess[tokenId][user], "Access not granted.");
-        sharedAccess[tokenId][user] = false;
-        sharedTokens[user].remove(tokenId);
-        tokenSharedWithUsers[tokenId].remove(user);
-    }
-
-    // function to revoke all shared access for a token
-    function revokeAllSharedAccess(uint256 tokenId)
-        public
-        onlyTokenOwner(tokenId)
-    {
-        EnumerableSet.AddressSet storage users = tokenSharedWithUsers[tokenId];
-        uint256 numberOfUsers = users.length();
-
-        for (uint256 i = 0; i < numberOfUsers; i++) {
-            address user = users.at(i);
-            sharedTokens[user].remove(tokenId);
-            sharedAccess[tokenId][user] = false;
-        }
-
-        // Delete the entire set of users
-        delete tokenSharedWithUsers[tokenId];
+        _revokeSharedAccess(tokenId, user);
     }
 
     // Function to burn a token owned by the caller
-    function burnToken(uint256 tokenId) public onlyTokenOwner(tokenId) {
+    function burnToken(uint256 tokenId, uint8 limitNumberOfSharedWith)
+        public
+        onlyTokenOwner(tokenId)
+    {
         // Revoke all shared accesses and remove token from sharedTokens for each user who had access
-        revokeAllSharedAccess(tokenId);
+        revokeAllSharedAccess(tokenId, limitNumberOfSharedWith);
 
-        // Remove the token from the owner's set of tokens
-        ownerTokens[msg.sender].remove(tokenId);
+        // If there are no more shared users, proceed with burning
+        if (tokenSharedWithUsers[tokenId].length() == 0) {
+            // Remove the token from the owner's set of tokens
+            ownerTokens[msg.sender].remove(tokenId);
 
-        delete tokenEncryptedKeyHashes[tokenId];
-
-        _burn(tokenId);
+            _burn(tokenId);
+        }
     }
 
     function reencrypt(
         uint256 tokenId,
-        bytes[] calldata encryptedFileKey,
         bytes32 publicKey,
         bytes memory signature
     )
         public
         view
-        onlyAuthorizedSigner(tokenId, publicKey, signature)
+        onlySignedPublicKey(publicKey, signature)
         returns (bytes[] memory)
     {
         require(
-            encryptedFileKey.length == 4,
-            "The NFT encryption key must be a table of size 4"
-        );
-
-        // Compute the hash of the encrypted file key using keccak256 and aggregate them
-        bytes32 aggregateHash = keccak256(
-            abi.encodePacked(
-                keccak256(encryptedFileKey[0]),
-                keccak256(encryptedFileKey[1]),
-                keccak256(encryptedFileKey[2]),
-                keccak256(encryptedFileKey[3])
-            )
-        );
-
-        // Compare the computed aggregate hash with the stored hash
-        require(
-            aggregateHash != tokenEncryptedKeyHashes[tokenId],
-            "The provided file key is not correct!"
+            ownerOf(tokenId) == msg.sender || sharedAccess[tokenId][msg.sender],
+            "Caller is neither owner nor authorized."
         );
 
         // Declaring an array to hold re-encrypted key parts
         bytes[] memory reEncryptedKeyParts = new bytes[](4);
 
         // Re-encrypt each key part
-        for (uint256 i = 0; i < encryptedFileKey.length; i++) {
-            euint64 reecryptkey = TFHE.asEuint64(encryptedFileKey[i]);
-            reEncryptedKeyParts[i] = TFHE.reencrypt(reecryptkey, publicKey);
+        for (uint8 i = 0; i < 4; i++) {
+            reEncryptedKeyParts[i] = TFHE.reencrypt(
+                tokenEncryptedKey[tokenId][i],
+                publicKey
+            );
         }
 
         return reEncryptedKeyParts;
-    }
-
-    modifier onlyAuthorizedSigner(
-        uint256 tokenId,
-        bytes32 publicKey,
-        bytes memory signature
-    ) {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(keccak256("Reencrypt(bytes32 publicKey)"), publicKey)
-            )
-        );
-        address signer = ECDSA.recover(digest, signature);
-        require(
-            ownerOf(tokenId) == signer || sharedAccess[tokenId][signer],
-            "Caller is neither owner nor authorized."
-        );
-        _;
     }
 
     // Modifier to check token ownership

@@ -338,6 +338,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "MAX_USERS_TO_REMOVE",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "acceptOwnership",
 		"outputs": [],
 		"stateMutability": "nonpayable",
@@ -386,6 +399,11 @@
 				"internalType": "uint256",
 				"name": "tokenId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "limitNumberOfSharedWith",
+				"type": "uint8"
 			}
 		],
 		"name": "burnToken",
@@ -590,9 +608,9 @@
 				"type": "string"
 			},
 			{
-				"internalType": "bytes32",
-				"name": "encryptedKeyHash",
-				"type": "bytes32"
+				"internalType": "bytes[4]",
+				"name": "encryptedFileKey",
+				"type": "bytes[4]"
 			}
 		],
 		"name": "mintToken",
@@ -672,11 +690,6 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "bytes[]",
-				"name": "encryptedFileKey",
-				"type": "bytes[]"
-			},
-			{
 				"internalType": "bytes32",
 				"name": "publicKey",
 				"type": "bytes32"
@@ -711,6 +724,11 @@
 				"internalType": "uint256",
 				"name": "tokenId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "limitNumberOfSharedWith",
+				"type": "uint8"
 			}
 		],
 		"name": "revokeAllSharedAccess",
@@ -913,14 +931,14 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			},
-			{
 				"internalType": "address",
 				"name": "to",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
 			}
 		],
 		"name": "transferToken",
