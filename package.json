@@ -46,7 +46,6 @@
     "prettier": "^3.0.0",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
-    "typescript": "^5.4.5",
     "vite": "^5.2.11"
   },
   "homepage": "https://el-hacen21.github.io/zama_bounty/"

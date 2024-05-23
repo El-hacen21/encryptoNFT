@@ -122,7 +122,7 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
 
 
 export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<string> => {
-  const ipfsApiKey = import.meta.env.VITE_PINATA_API_KEY as string;
+  const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
   const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
   const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_URL || 'http://localhost:5001') as string;
   const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string; // Ensure you set this in your .env files
@@ -142,14 +142,14 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<st
   if (isProduction) {
     // Production: Upload to Pinata
     const pinataOptions = JSON.stringify({
-      cidVersion: 0,
+      cidVersion: 1,
     });
     formData.append('pinataOptions', pinataOptions);
 
     try {
       const response = await axios.post(PINATA_API_URL, formData, {
         headers: {
-          'Authorization': `Bearer ${ipfsApiKey}`,
+          'Authorization': `Bearer ${pinataJWT}`,
           'Content-Type': 'multipart/form-data',
         }
       });
@@ -157,6 +157,7 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<st
       if (response.status !== 200) {
         throw new Error(`IPFS upload failed: ${response.statusText}`);
       }
+
 
       // Construct the URL to access the file via your dedicated IPFS gateway
       return `${DEDICATED_IPFS_URL}/ipfs/${response.data.IpfsHash}`;
@@ -187,7 +188,7 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<st
 
 
 export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
-  
+
   try {
     const response = await fetch(cidHash, {
       headers: {

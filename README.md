@@ -186,6 +186,66 @@ Copy the example environment variable files and update them with your specific c
 ```bash
 cp .env.development.example .env.development
 ```
+#### Running a Local IPFS Node
+
+1. **Prerequisites**
+   
+- Ensure you have `go-ipfs` installed. If not, you can download it from the [IPFS GitHub repository](https://github.com/ipfs/go-ipfs) or using your package manager.
+
+
+1. **Initialize IPFS Repository**
+
+   First, initialize your IPFS repository. Open your terminal and run:
+
+   ```sh
+   ipfs init
+   ```
+
+2. **Start the IPFS Daemon**
+
+    To start your IPFS node, run the IPFS daemon:
+
+    ```
+    ipfs daemon
+    ```
+
+    This will start your IPFS node and make it available locally at http://localhost:5001.
+
+
+
+3. **Adding CORS for Your Application URL**
+
+    To allow your application to interact with the local IPFS node, you need to configure CORS settings.
+
+    
+
+    Open a new terminal window and run the following commands to set the appropriate CORS headers. Replace http://your-application-url.com ("http://127.0.0.1:5173", "http://localhost:5173") with your actual application URL.
+
+    ```sh
+    ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://localhost:3000", "http://127.0.0.1:5173", "http://localhost:5173"]'
+    ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST", "GET"]'
+    ipfs config --json API.HTTPHeaders.Access-Control-Allow-Headers '["Authorization"]'
+
+    ```
+
+  4. **Restart the IPFS Daemon**
+
+     After setting the CORS headers, restart your IPFS daemon to apply the changes:
+
+      ```sh
+      ipfs shutdown
+      ipfs daemon
+      ```
+      
+
+
+   5. **Check IPFS Node Status**
+
+      Visit http://localhost:5001/webui in your browser to ensure your IPFS node is running correctly.
+
+  6. **Additional Resources**
+    [IPFS Documentation](https://docs.ipfs.tech/)
+
 #### Run
 
   * Install all necessary packages: `npm install`

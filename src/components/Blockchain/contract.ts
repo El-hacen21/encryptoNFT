@@ -86,7 +86,6 @@ export async function mintToken(cidHash: string, encryptedFileKey: Uint8Array[])
 		const tokenMintedEvent = await getEvent(txResponse, 'TokenMinted');
 		if (!tokenMintedEvent) throw new Error('TokenMinted event not found.');
 
-
 		const tokenId: number = Number(tokenMintedEvent.args[0]);
 
 		return { tokenId: tokenId, cidHash: cidHash };

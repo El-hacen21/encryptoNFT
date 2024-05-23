@@ -22,7 +22,7 @@ jobs:
         run: echo "VITE_APP_BASE_URL=/zama_bounty/" >> $GITHUB_ENV
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --production
 
       - name: Build project
         run: npm run build
