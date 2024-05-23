@@ -40,7 +40,8 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       ```
       encryptedFile <-- (ciphFile|encryptedFileKey). 
       ```
-      >  for more details on how `CiphFile` and `EncryptedFile` are generated see [utils.ts](/src/components/Utils/utils.ts).
+      > Inclusion of encryptedFileKey is not currently used, but enables a potential optimization saving 1000x blockchain storage space.
+      > For more details on how `CiphFile` and `EncryptedFile` are generated see [utils.ts](/src/components/Utils/utils.ts).
 
 
 
@@ -53,20 +54,11 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       > Pinata (https://www.pinata.cloud/) is a cloud-based service that simplifies uploading and managing files on IPFS. It is used to upload files to IPFS through an API key.
 
 3. **Minting of the NFT** :
-    - The _hash_ of the `encryptedFileKey` (`hashedEncryptedFileKey`) is added as metadata of the NFT. 
-
+    An NFT (token) is created (or "minted") through the contract, with an IPFS reference to the `encryptedFile`, and with the `encryptedFileKey` added as metadata 
       ```javascript 
-      const hashedEncryptedFileKey = await fileKeyHashing(encryptedFileKey);
+      const token = await mintToken(cidHash, encryptedFileKey);
       ```
-    
-      >We could have put all the `encryptedFileKey` as metadata, but this would have costed much more blockchain storage space.
-      We will detail later the trick enabling the contract to control acces to `fileKey` despite storing only the hash of the `encryptedFileKey`. 
-
-    - Finally, an NFT (token) is created (or minted) through the contract, with an IPFS reference to the `encryptedFile`.
-      ```javascript 
-      const token = await mintToken(cidHash, hashedEncryptedFileKey);
-      ```
-      > For more details refer to the function  `mintToken(string calldata cidHash, bytes32 encryptedKeyHash)` in [contract.sol](/src/components/Blockchain/contract.sol).
+      > For more details refer to the function  `mintToken` in [contract.sol](/src/components/Blockchain/contract.sol).
    
       
 ## II. Management of the NFT
@@ -105,13 +97,12 @@ In more detail, the function `displayGallery` automatically performs the followi
       
    
 2. **Reencryption then Decryption of the fileKey** :
-    - Reencryption of the `encryptedFileKey` under the encryption key `publicKey`, to obtain `reEncryptedFileKey`.
+    - Reencryption of the `encryptedFileKey` of the token under the encryption key `publicKey`, to obtain `reEncryptedFileKey`.
   
       > The reencryption query to the fhEVM is done by the function :
       ```
       function reencrypt(
         uint256 tokenId,
-        bytes[] calldata encryptedFileKey,
         bytes32 publicKey,
         bytes memory signature)
       ``` 
@@ -121,10 +112,6 @@ In more detail, the function `displayGallery` automatically performs the followi
       > Technically, this check is done by the modifier `onlyAuthorizedSigner`. Its implementation is inspired from the official modifier [onlySignedPublicKey](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11). The novelty is that `onlyAuthorizedSigner` allows the msg.sender not to be necessarily the `signer`.
     
       > To maintain security despite this relaxation, `onlyAuthorizedSigner` controls acces on the basis of the `signer` (of the `publicKey`), and not anymore based on the `msg.sender` (as in [balanceOf of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)). These modifications enable a scalability gain, as explained below in IV.
-      
-      >  Very important: the  function `reencrypt` also checks that the `encryptedFileKey` is the owner of the token: indeed, otherwise, a _shared-with_ of token1 could get the fileKey2 of token2!.
-
-      > To this end, `reencrypt` compares the hash of the input `encryptedFileKey`, with the hash stored on the contract. This trick enables not to store the (much heavier) `encryptedFileKey` on the blockchain.
       
     - Decryption of `reEncryptedFileKey` with the secret decryption key of the _shared-with_, to obtain the `fileKey`.
   
