@@ -180,12 +180,6 @@ export const Gallery = () => {
             const encryptedFile = await getEncryptedFileCidHash(cidHash);
             if (!encryptedFile) throw new Error("Dencrypting data failed.");
 
-            console.log("cid: ", cidHash);
-            console.log("Encrypted FIle: ", encryptedFile);
-
-            // const encryptedKeys = deserializeEncryptedKeyParts(encryptedFile.encryptedFileKey);
-
-
             const reEncryptedFileKey = await contract.reencrypt(tokenId, publicKey, signature);
             const decryptedKey: bigint[] = [];
 

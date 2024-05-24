@@ -15,9 +15,9 @@ export interface CiphFile {
   };
 }
 
-export interface EncryptedFile extends CiphFile {
-  encryptedFileKey: Uint8Array[];  // Array of Uint8Array, each representing a key segment resulting from instance.encrypt64
-}
+// export interface EncryptedFile extends CiphFile {
+//   encryptedFileKey: Uint8Array[];  // Array of Uint8Array, each representing a key segment resulting from instance.encrypt64
+// }
 
 export interface DecryptedFileMetaData {
   file: File;
@@ -121,7 +121,7 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
 }
 
 
-export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<string> => {
+export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string> => {
   const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
   const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
   const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_URL || 'http://localhost:5001') as string;
@@ -187,7 +187,7 @@ export const uploadFileToIPFS = async (encryptedFile: EncryptedFile): Promise<st
 };
 
 
-export async function getEncryptedFileCidHash(cidHash: string): Promise<EncryptedFile> {
+export async function getEncryptedFileCidHash(cidHash: string): Promise<CiphFile> {
 
   try {
     const response = await fetch(cidHash, {
@@ -201,7 +201,7 @@ export async function getEncryptedFileCidHash(cidHash: string): Promise<Encrypte
     }
 
     const data = await response.json();
-    return data as EncryptedFile;
+    return data as CiphFile;
   } catch (error) {
     console.error("Error fetching data:", error);
     throw error;

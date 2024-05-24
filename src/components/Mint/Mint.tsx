@@ -47,9 +47,7 @@ export const Mint = () => {
 
       const encryptedFileKey = await fileKeyEncryption(fileKey);
 
-      const encryptedFile = { ...ciphFile, encryptedFileKey };
-
-      const cidHash = await uploadFileToIPFS(encryptedFile);
+      const cidHash = await uploadFileToIPFS(ciphFile);
 
       toast.info("Your file is currently being minted as an NFT. This may take a few moments.");
 
