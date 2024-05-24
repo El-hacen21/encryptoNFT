@@ -10,8 +10,8 @@ The storage location is IPFS (InterPlanetary File System), which ensures robust 
 Summarizing, the graphical interface [Mint.tsx](/src/components/Mint/Mint.tsx) allows a user to upload a file (image, video, document, etc.) to be saved as secret content over which only they have control. To achieve this, the following processes are automatically performed after the file has been uploaded:
 
   - Generation of a symmetric key (`fileKey`), encryption of `file` under `fileKey`, producing a ciphertext `ciphFile`.
-  - Then, upload of `ciphFile` on IPFS, concatenated with an encryption of the `fileKey` (`encryptedFileKey`) under the fhEVM public key attached to the contract.
-    > Hence, controlling access to the secret content "file" is equivalent to controlling access to the "fileKey".
+  - Then, upload of `ciphFile` on IPFS, 
+     > Hence, controlling access to the secret content "file" is equivalent to controlling access to the "fileKey".
   - Finally, minting of the NFT associated to the `encryptedFileKey`.
     > The contract will do the access control to the "fileKey", thanks to the power of the fhEVM to privately decrypt the "encryptedFileKey" into  "fileKey", to a predetermined list of so-called Shared-with users (identified by their Ethereum addresses).
 
@@ -29,17 +29,17 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       ```javascript 
         const ciphFile = await encryptFile(file, fileKey);
       ```
-    - The `fileKey` is encrypted into a `ciphFile`: `encryptedFileKey` under the fhEVM public key attached to the contract. 
-      ```javascript 
+   
+      ```javascript  
       const encryptedFileKey = await fileKeyEncryption(fileKey);
       ```
    
       > The `fileKey` was decomposed into an array of four 64-bit entries to be passed to `instance.encrypt64`. As output, the `encryptedFileKey`  will contain 4 `Uint8Array` objects, each resulting from calling `instance.encrypt64`.
 
-    - Then, the `encryptedFileKey` is added to the `ciphFile: CiphFile` to create the `encryptedFile: EncryptedFile`
+    <!-- - Then, the `encryptedFileKey` is added to the `ciphFile: CiphFile` to create the `encryptedFile: EncryptedFile`
       ```
       encryptedFile <-- (ciphFile|encryptedFileKey). 
-      ```
+      ``` -->
       <!-- > Inclusion of encryptedFileKey is not currently used, but enables a potential optimization saving 1000x blockchain storage space. -->
       > For more details on how `CiphFile` and `EncryptedFile` are generated see [utils.ts](/src/components/Utils/utils.ts).
 
