@@ -40,7 +40,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       ```
       encryptedFile <-- (ciphFile|encryptedFileKey). 
       ```
-      > Inclusion of encryptedFileKey is not currently used, but enables a potential optimization saving 1000x blockchain storage space.
+      <!-- > Inclusion of encryptedFileKey is not currently used, but enables a potential optimization saving 1000x blockchain storage space. -->
       > For more details on how `CiphFile` and `EncryptedFile` are generated see [utils.ts](/src/components/Utils/utils.ts).
 
 
@@ -58,6 +58,8 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       ```javascript 
       const token = await mintToken(cidHash, encryptedFileKey);
       ```
+      >Storing `encryptedFileKey` onchain is perfectly fine, thanks to Zama fhvem unique features.
+
       > For more details refer to the function  `mintToken` in [contract.sol](/src/components/Blockchain/contract.sol).
    
       
@@ -68,11 +70,12 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
    
 - **Addition and Revocation of Shared-with** :
     - The functions `shareToken` and `revokeTokenAccess` (in [contract.sol](/src/components/Blockchain/contract.sol) and accessible by the graphical interface) enable to add or remove the address of a user (`user`) in the list `sharedAccess[tokenId]` of the _Shared-with_ users, i.e., those having access to the secret content associated to the token (`tokenId`).
-  
-   
-    > To enable a shared-with user to quickly know the tokens that it has access to, these functions also update the lists (`sharedTokens[user]`) of the tokens shared with each user ("user").
+     
+    > To enable a shared-with user to quickly know the tokens that it has access to, these functions also update the lists (`sharedTokens[user]`) of the tokens shared with each user.
 
     > The graphical interface also enables to revoke, at once, all the shared-with of a given token.
+
+    > `limitNumberOfSharedWith` is used to set size limits for the maximum number of NFTs to process in a single call to revokeAllSharedAccess and burnToken. This is done to prevent DDOS issues caused by excessive gas costs when sets become too large, which could cause the functions to revert.
 
 ## III. Acces to the secret content by a Shared-with
 The function `displayGallery` (in [Gallery.tsx](/src/components/Gallery/Gallery.tsx)) is executed by a user, it returns and displays all the secret contents of the tokens of which it is a _shared-with_.
@@ -100,18 +103,27 @@ In more detail, the function `displayGallery` automatically performs the followi
     - Reencryption of the `encryptedFileKey` of the token under the encryption key `publicKey`, to obtain `reEncryptedFileKey`.
   
       > The reencryption query to the fhEVM is done by the function :
-      ```
+      ```solidity
       function reencrypt(
         uint256 tokenId,
         bytes32 publicKey,
-        bytes memory signature)
+        bytes memory signature)  public view
+        onlySignedPublicKey(publicKey, signature)
+        returns (bytes[] memory)
       ``` 
     
       `reencrypt` is defined in [contract.sol](/src/components/Blockchain/contract.sol) and controls the access: it checks that the signer (`signer`) of the public key (`publicKey`) is member of the list (`sharedAccess[tokenId]`) of the shared-with of the token or the owner .
 
-      > Technically, this check is done by the modifier `onlyAuthorizedSigner`. Its implementation is inspired from the official modifier [onlySignedPublicKey](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11). The novelty is that `onlyAuthorizedSigner` allows the msg.sender not to be necessarily the `signer`.
+      ```solidity
+      require(
+            ownerOf(tokenId) == msg.sender || sharedAccess[tokenId][msg.sender],
+            "Caller is neither owner nor authorized."
+        );
+      ``` 
+
+      <!-- > Technically, this check is done by the modifier `onlyAuthorizedSigner`. Its implementation is inspired from the official modifier [onlySignedPublicKey](https://github.com/zama-ai/fhevm/blob/d7783378e1e035cd02b4c913d8537e68205ff215/abstracts/Reencrypt.sol#L11). The novelty is that `onlyAuthorizedSigner` allows the msg.sender not to be necessarily the `signer`.
     
-      > To maintain security despite this relaxation, `onlyAuthorizedSigner` controls acces on the basis of the `signer` (of the `publicKey`), and not anymore based on the `msg.sender` (as in [balanceOf of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)). These modifications enable a scalability gain, as explained below in IV.
+      > To maintain security despite this relaxation, `onlyAuthorizedSigner` controls acces on the basis of the `signer` (of the `publicKey`), and not anymore based on the `msg.sender` (as in [balanceOf of the eERC720](https://github.com/zama-ai/fhevm/blob/main/examples/EncryptedERC20.sol)). These modifications enable a scalability gain, as explained below in IV. -->
       
     - Decryption of `reEncryptedFileKey` with the secret decryption key of the _shared-with_, to obtain the `fileKey`.
   
@@ -121,10 +133,10 @@ In more detail, the function `displayGallery` automatically performs the followi
       ```javascript
       const decryptedFile = await decryptFile(encryptedFile, fileKey);
       ```
-      (`decryptedFile` <-- `AES-CTR.Decrypt("ciphFile","fileKey")` 
+      (`decryptedFile` <-- `AES-CTR.Decrypt("ciphFile","fileKey")`) 
         which is thus equal to the `file` initially uploaded by the Creator.
 
-## IV. Scalability, thanks to Delegation to an untrusted Acces Broker
+<!-- ## IV. Scalability, thanks to Delegation to an untrusted Acces Broker
 The _shared-with_ Alice(s) do not necessarily want to create Ethereum accounts, nor to send requests to a contract and spend gaz just to access secret contents.
 Our contract enables the use-case that _any_ Bob can call `reencrypt` with a `publicKey` for re-encryption which was generated and signed by Alice.
 Hence, Bob can play the role of an Untrusted Acces Broker on behalf of several shared-with Alices, thus improving scalability.
@@ -140,7 +152,7 @@ Note that our graphical interface does not yet enable such a delegation, it deal
 
 As explained in V. below, we are considering adding, as a bonus, the possibility to hide the identities the _shared-with_.
 Only the _shared-with_ effectively querying access to a plaintext content, would lose their anonymity. 
-This will be implementable as soon as efficient functions for encrypted arrays will be available in the fhEVM.
+This will be implementable as soon as efficient functions for encrypted arrays will be available in the fhEVM. -->
 
 
 ## V. Project of improvement: Anonymization of the Shared-with, as soon as encrypted arrays will be released
@@ -171,8 +183,14 @@ To run the application locally, follow these steps:
 Copy the example environment variable files and update them with your specific configurations.
 
 ```bash
-cp .env.development.example .env.development
+cp .env.example .env
 ```
+<!-- You can also add your [Pinata](https://www.pinata.cloud/) credentials to the .env file by replacing these variables with your credentials. If you want to use Pinata, otherwise the
+
+```bash
+VITE_DEDICATED_IPFS_URL="DEDICATED_IPFS_URL OR GATEWAY"
+VITE_PINATA_JWT="YOUR_PINATA_JWT"
+``` -->
 #### Running a Local IPFS Node
 
 1. **Prerequisites**
