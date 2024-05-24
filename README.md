@@ -82,7 +82,7 @@ The function `displayGallery` (in [Gallery.tsx](/src/components/Gallery/Gallery.
 The function performs automatically all the following steps.
 
 Summarizing, for each secret content (token) for which the user is shared-with, it queries the re-encryption of the `fileKey` under a public encryption key `publicKey` which the user owns.
-Then, it decrypts this re-encryption to obtain `fileKey`, downloads the public ciphertext (`ciphFile`) from IPFS and finally decrypts it into `file` using the `fileKey`.
+Then, it decrypts this re-encryption to obtain `fileKey`, downloads the public ciphertext (`encryptedFile`) from IPFS and finally decrypts it into `file` using the `fileKey`.
 
 In more detail, the function `displayGallery` automatically performs the following steps for each token in the `ownerTokens[user]` to display the NFTs owned by the user, and in `sharedTokens[user]` for the NFTs with which the user is _shared-with_. For a better user interface, two separate components are created in the gallery. One, managed by `displayMyNFTs`, displays only the owned NFTs; the other, `displaySharedWithMeNFTs`, displays the shared NFTs. These two components can be refreshed separately. The main difference between owned NFTs and shared NFTs is that the latter can only be downloaded; other functionalities are not possible.
 
@@ -129,11 +129,11 @@ In more detail, the function `displayGallery` automatically performs the followi
   
       > This is done via the call to `instance.decrypt`.
        <!-- Note that the "instance" is not the fhEVM, we are not making a public decryption here. It is instead the local instance of the Shared-with, the one with which it generated its personal "publicKey".` -->
-    - Using the `fileKey` to decrypt the `ciphFile`: 
+    - Using the `fileKey` to decrypt the `encryptedFile`: 
       ```javascript
       const decryptedFile = await decryptFile(encryptedFile, fileKey);
       ```
-      (`decryptedFile` <-- `AES-CTR.Decrypt("ciphFile","fileKey")`) 
+      (`decryptedFile` <-- `AES-CTR.Decrypt("encryptedFile","fileKey")`) 
         which is thus equal to the `file` initially uploaded by the Creator.
 
 <!-- ## IV. Scalability, thanks to Delegation to an untrusted Acces Broker
