@@ -21,10 +21,10 @@ export function getFileIcon(mimeType: string) {
         default:
             return <FileEarmark />;
     }
-}
+};
 
 
-export function formatAddress(address: string, charsToShow: number = 6): string {
+export function formatAddress(address: string, charsToShow = 6): string {
     if (address.length < 2 * charsToShow + 2) {
         return address;
     }
@@ -33,7 +33,7 @@ export function formatAddress(address: string, charsToShow: number = 6): string 
     const end = address.substring(address.length - charsToShow);
 
     return `${start}...${end}`;
-}
+};
 
 
 
@@ -48,15 +48,20 @@ export function downloadFile(file: File): void {
 }
 
 
-
-export function formatFileSize(bytes: number, decimals = 2) {
+export function formatFileSize(bytes: number, decimals = 2): string {
+    if (bytes < 0) return 'Invalid size';  // Handle negative bytes
     if (bytes === 0) return '0 Bytes';
+
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
+    const size = (bytes / Math.pow(k, i)).toFixed(dm);
+
+    return `${size} ${sizes[i]}`;
+};
+
 
 
 

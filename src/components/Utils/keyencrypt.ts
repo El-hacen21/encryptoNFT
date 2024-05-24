@@ -46,7 +46,7 @@ export async function importCryptoKey(bigIntKeys: bigint[], keyUsages: KeyUsage[
 export async function exportCryptoKey(key: CryptoKey): Promise<bigint[]> {
   // Ensure the key can be exported in the desired format
   const exported = await window.crypto.subtle.exportKey("raw", key);
-  const buffer = exported as ArrayBuffer;
+  const buffer = exported;
 
   // Check that the key length matches the expected size (256 bits, or 32 bytes)
   if (buffer.byteLength !== 32) {

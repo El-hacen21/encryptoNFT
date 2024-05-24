@@ -1,6 +1,4 @@
 
-// import { Buffer } from 'buffer/'
-
 export async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

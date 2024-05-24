@@ -10,7 +10,6 @@ if (import.meta.env.MODE !== 'development') {
   console.log = () => { };
   console.warn = () => { };
   console.info = () => { };
-  // console.error = () => {};
 }
 
 
