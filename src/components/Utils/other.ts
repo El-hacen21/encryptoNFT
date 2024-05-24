@@ -4,7 +4,6 @@ export async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
     const reader = new FileReader();
 
     reader.onload = () => {
-      // Ensure the result is indeed an ArrayBuffer
       if (reader.result instanceof ArrayBuffer) {
         resolve(reader.result);
       } else {
@@ -13,17 +12,17 @@ export async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
     };
 
     reader.onerror = () => {
-      // Provide a more descriptive error message by including the error's details
-      reject(new Error(`Error reading file: ${reader.error?.message}`));
+      reject(new Error(`Error reading file: ${reader.error?.message || 'Unknown error'}`));
     };
 
     reader.onabort = () => {
-      reject(new Error("File read was aborted by the user."));
+      reject(new Error("File read was aborted."));
     };
 
     reader.readAsArrayBuffer(file);
   });
 }
+
 
 
 /**
@@ -61,8 +60,8 @@ export function bigIntsToBuffer(bigInts: bigint[]): ArrayBuffer {
 
 
 export function concatenateUint8Arrays(arrays: Uint8Array[]): Uint8Array {
-  let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
-  let result = new Uint8Array(totalLength);
+  const totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
+  const result = new Uint8Array(totalLength);
   let length = 0;
   arrays.forEach(array => {
     result.set(array, length);

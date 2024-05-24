@@ -23,7 +23,7 @@ export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, on
     if (open) {
       fetchSharedAddresses();
     }
-  }, [open, tokenId, fetchSharedAddresses]);
+  }, [open, tokenId]);
 
   const handleRevokeAccess = async (address: string) => {
     const isSuccessRevoke = await revokeTokenAccess(tokenId, address);

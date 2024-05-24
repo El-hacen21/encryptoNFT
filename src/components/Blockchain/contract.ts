@@ -32,7 +32,7 @@ async function initializeProviderAndSigner() {
 }
 
 // Call the function to initialize provider and signer
-initializeProviderAndSigner();
+await initializeProviderAndSigner();
 
 // Create a contract instance with a signer, which enables sending transactions
 // const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -59,7 +59,7 @@ export async function getAccount(): Promise<string | null> {
 export interface TokenDetails {
 	tokenId: number;
 	cidHash: string;
-};
+}
 
 
 async function getEvent(
@@ -165,7 +165,7 @@ export async function getSharedWithAddresses(tokenId: number): Promise<string[]>
 }
 
 
-export async function transferToken(to: string, tokenId: number): Promise<Boolean> {
+export async function transferToken(to: string, tokenId: number): Promise<boolean> {
 	try {
 		// Call the contract's transferToken function
 		const tx = await contract?.transferToken(to, tokenId);
@@ -203,7 +203,7 @@ export async function shareToken(to: string, tokenId: number): Promise<boolean> 
 
 
 
-export async function burnToken(tokenId: number, limitNumberOfSharedWith: number): Promise<Boolean> {
+export async function burnToken(tokenId: number, limitNumberOfSharedWith: number): Promise<boolean> {
 	try {
 		// Call the contract's burnToken function
 		const tx = await contract?.burnToken(tokenId, limitNumberOfSharedWith);
@@ -229,7 +229,7 @@ export async function getSupply(): Promise<number> {
 		console.error("Failed to fetch the total number of NFTs:", error);
 		throw error;
 	}
-};
+}
 
 
 export async function getSharedWithSupply(): Promise<number> {
@@ -241,7 +241,7 @@ export async function getSharedWithSupply(): Promise<number> {
 		console.error("Failed to fetch the total number of NFTs shared: ", error);
 		throw error;
 	}
-};
+}
 
 
 
@@ -266,7 +266,7 @@ export async function reencrypt(tokenId: number,
 	}
 }
 
-export async function revokeTokenAccess(tokenId: number, userAddress: string): Promise<Boolean> {
+export async function revokeTokenAccess(tokenId: number, userAddress: string): Promise<boolean> {
 
 	try {
 		const tx = await contract?.revokeTokenAccess(tokenId, userAddress);
@@ -278,7 +278,7 @@ export async function revokeTokenAccess(tokenId: number, userAddress: string): P
 	}
 }
 
-export async function revokeAllSharedAccess(tokenId: number, limitNumberOfSharedWith: number): Promise<Boolean> {
+export async function revokeAllSharedAccess(tokenId: number, limitNumberOfSharedWith: number): Promise<boolean> {
 
 	try {
 		const tx = await contract?.revokeAllSharedAccess(tokenId, limitNumberOfSharedWith);

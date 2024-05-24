@@ -21,7 +21,7 @@ export function getFileIcon(mimeType: string) {
         default:
             return <FileEarmark />;
     }
-};
+}
 
 
 export function formatAddress(address: string, charsToShow = 6): string {
@@ -33,8 +33,7 @@ export function formatAddress(address: string, charsToShow = 6): string {
     const end = address.substring(address.length - charsToShow);
 
     return `${start}...${end}`;
-};
-
+}
 
 
 export function downloadFile(file: File): void {
@@ -60,7 +59,7 @@ export function formatFileSize(bytes: number, decimals = 2): string {
     const size = (bytes / Math.pow(k, i)).toFixed(dm);
 
     return `${size} ${sizes[i]}`;
-};
+}
 
 
 
