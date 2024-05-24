@@ -16,14 +16,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Load environment variables
         run: echo "VITE_APP_BASE_URL=/zama_bounty/" >> $GITHUB_ENV
 
       - name: Install dependencies
-        run: npm install
-        
+        run: npm ci --only=production
+
       - name: Build project
         run: npm run build
 
