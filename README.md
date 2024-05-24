@@ -48,7 +48,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
 2. **Storage on IPFS** :
     - `encryptedFile` is uploaded on IPFS , and the `cidHash` (unique IPFS identifier of `encryptedFile`) is retrieved.
       ```javascript 
-      const cidHash = await uploadFileToIPFS(encryptedFile);
+      const cidHash = await uploadFileToIPFS(ciphFile);
       ```
 
       > Pinata (https://www.pinata.cloud/) is a cloud-based service that simplifies uploading and managing files on IPFS. It is used to upload files to IPFS through an API key.
