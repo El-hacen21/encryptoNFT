@@ -187,7 +187,7 @@ export const Gallery = () => {
 
 
             const reEncryptedFileKey = await contract.reencrypt(tokenId, publicKey, signature);
-            let decryptedKey: bigint[] = [];
+            const decryptedKey: bigint[] = [];
 
             reEncryptedFileKey.forEach((element) => {
                 if (element) {
