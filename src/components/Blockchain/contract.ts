@@ -32,7 +32,7 @@ async function initializeProviderAndSigner() {
 }
 
 // Call the function to initialize provider and signer
-await initializeProviderAndSigner();
+initializeProviderAndSigner();
 
 // Create a contract instance with a signer, which enables sending transactions
 // const contract = new ethers.Contract(contractAddress, contractABI, signer);
