@@ -25,6 +25,10 @@ jobs:
           echo "VITE_LOCAL_IPFS_API_URL=${{ secrets.VITE_LOCAL_IPFS_API_URL }}" >> $GITHUB_ENV
           echo "VITE_LOCAL_IPFS_GATEWAY_URL=${{ secrets.VITE_LOCAL_IPFS_GATEWAY_URL }}" >> $GITHUB_ENV
 
+      - name: Load secret environment variables
+        run: |
+          echo "VITE_DEDICATED_IPFS_URL=${{ secrets.VITE_DEDICATED_IPFS_URL }}" >> $GITHUB_ENV
+          echo "VITE_PINATA_JWT=${{ secrets.VITE_PINATA_JWT }}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm ci
