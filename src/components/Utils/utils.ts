@@ -5,6 +5,15 @@ import axios from 'axios';
 import { create } from 'ipfs-http-client';
 
 
+// Global constants for environment variables
+const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
+const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_API_URL || 'http://localhost:5001') as string;
+const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string;
+const LOCAL_IPFS_GATEWAY_URL = (import.meta.env.VITE_LOCAL_IPFS_GATEWAY_URL || 'http://localhost:8080') as string;
+const PINATA_JWT = import.meta.env.VITE_PINATA_JWT as string;
+
+
+
 export interface CiphFile {
   ciphFileData: string;  // Base64 encoded string
   ciphFileMetadata: string;  // Base64 encoded string
@@ -116,14 +125,7 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
   }
 }
 
-
 export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string> => {
-  // const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
-  const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
-  const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_API_URL || 'http://localhost:5001') as string;
-  const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string;
-  const LOCAL_IPFS_GATEWAY_URL = (import.meta.env.VITE_LOCAL_IPFS_GATEWAY_URL || 'http://localhost:8080') as string;
-
   const isProduction = import.meta.env.MODE === 'production';
 
   const encryptedFileString = JSON.stringify(encryptedFile);
@@ -140,8 +142,7 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
       try {
         const response = await axios.post<{ IpfsHash: string }>(PINATA_API_URL, formData, {
           headers: {
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            'Authorization': `Bearer ${import.meta.env.VITE_PINATA_JWT}`,
+            'Authorization': `Bearer ${PINATA_JWT}`,
             'Content-Type': 'multipart/form-data',
           },
         });
