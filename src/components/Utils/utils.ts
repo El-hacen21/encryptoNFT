@@ -6,8 +6,8 @@ import { create } from 'ipfs-http-client';
 
 
 export interface CiphFile {
-  encryptedFileData: string;  // Base64 encoded string
-  encryptedMetadata: string;  // Base64 encoded string
+  ciphFileData: string;  // Base64 encoded string
+  ciphFileMetadata: string;  // Base64 encoded string
   encryptionAlgorithm: {
     name: string;
     counter: Uint8Array;
@@ -44,7 +44,7 @@ export async function encryptFile(file: File, key: CryptoKey): Promise<CiphFile>
   const arrayBuffer = await readFileAsArrayBuffer(file);
   try {
     // Encrypt the file data
-    const encryptedFileData = await window.crypto.subtle.encrypt(
+    const ciphFileData = await window.crypto.subtle.encrypt(
       encryptionAlgorithm,
       key,
       arrayBuffer
@@ -52,7 +52,7 @@ export async function encryptFile(file: File, key: CryptoKey): Promise<CiphFile>
 
 
     // Encrypt the metadata
-    const encryptedMetadata = await window.crypto.subtle.encrypt(
+    const ciphFileMetadata = await window.crypto.subtle.encrypt(
       encryptionAlgorithm,
       key,
       metadataArrayBuffer
@@ -60,14 +60,14 @@ export async function encryptFile(file: File, key: CryptoKey): Promise<CiphFile>
 
     // console.log("metadataString", metadataString);
 
-    const encryptedFile: CiphFile = {
-      encryptedFileData: bufferToBase64(encryptedFileData),
-      encryptedMetadata: bufferToBase64(encryptedMetadata),
+    const ciphFile: CiphFile = {
+      ciphFileData: bufferToBase64(ciphFileData),
+      ciphFileMetadata: bufferToBase64(ciphFileMetadata),
       encryptionAlgorithm: { name: encryptionAlgorithm.name, length: encryptionAlgorithm.length, counter: encryptionAlgorithm.counter },
     };
 
 
-    return encryptedFile;
+    return ciphFile;
 
   } catch (error) {
     console.error("Encryption failed:", error);
@@ -91,7 +91,7 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
         length: ciphFile.encryptionAlgorithm.length
       },
       key,
-      base64ToArrayBuffer(ciphFile.encryptedFileData)
+      base64ToArrayBuffer(ciphFile.ciphFileData)
     );
 
     const decryptedMetaData = await window.crypto.subtle.decrypt(
@@ -101,10 +101,8 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
         length: ciphFile.encryptionAlgorithm.length
       },
       key,
-      base64ToArrayBuffer(ciphFile.encryptedMetadata)
+      base64ToArrayBuffer(ciphFile.ciphFileMetadata)
     );
-
-    // console.log('Encrypted Metadata: ', ciphFile.encryptedMetadata);
 
     const decodedMetadataString = new TextDecoder().decode(decryptedMetaData);
     // console.log("Decrypted Metadata String:", decodedMetadataString); 
@@ -119,7 +117,6 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
     throw error;
   }
 }
-
 
 export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string> => {
   const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
