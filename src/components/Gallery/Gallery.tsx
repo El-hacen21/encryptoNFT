@@ -80,14 +80,16 @@ export const Gallery = () => {
             const fetchedAccount = await contract.getAccount();
             if (fetchedAccount) {
                 setAccount(fetchedAccount);
-            } else {
-                toast.info('Merci de vous connecter pour continuer.');
             }
         } catch (error) {
-            toast.info('Merci de vous connecter pour continuer.');
             console.error(error);
+            toast.info('Merci de vous connecter pour continuer.');
         }
     };
+
+    useEffect(() => {
+        fetchAccount();
+    }, []);
 
 
     const displayGallery = async (): Promise<void> => {
@@ -116,7 +118,6 @@ export const Gallery = () => {
         }
 
     }
-
 
     const displayMyNFTs = async (): Promise<void> => {
         if (!nfts) {
@@ -355,7 +356,6 @@ export const Gallery = () => {
 
             )
             }
-
 
         </Container >
 

@@ -2,7 +2,7 @@
 import { ethers, Signer, Contract, BrowserProvider } from 'ethers';
 import contractABI from './ABI.json';
 
-export const contractAddress = '0x72F2C6EAaAf332999Df158E59Aad670c6d2DA1c8';
+export const contractAddress = '0xDCc49e76b061db2AA11013cB47f5D9ebfC131361';
 
 // Declare global variables for provider, signer, and contract
 let provider: BrowserProvider | null;
@@ -37,21 +37,21 @@ initializeProviderAndSigner();
 // Create a contract instance with a signer, which enables sending transactions
 // const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-export async function getAccount(): Promise<string | null> {
+export async function getAccount(): Promise<string> {
 	if (provider && signer)
 		try {
 			await provider.send("eth_requestAccounts", []);
 			const account = await signer.getAddress();
 			if (!account) {
 				console.error("No accessible accounts. Make sure MetaMask is connected.");
-				return null;
+				return '';
 			}
 			return account;
 		} catch (error) {
 			console.error("Could not get access to accounts:", error);
-			return null;
+			return '';
 		}
-	return null;
+	return '';
 }
 
 
