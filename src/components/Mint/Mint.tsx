@@ -2,10 +2,11 @@
 import './Mint.css'
 import React, { useState, useEffect } from 'react';
 import uploadIcon from "../../assets/img/upload-icon.jpg";
-import { useFhevm } from '../Contexts/FhevmContext';
+import { useFhevm } from '../Contexts/useFhevm';
 import { mintToken, getAccount } from '../Blockchain/contract'
 import { exportCryptoKey, generateKey } from '../Utils/keyencrypt'
-import { useNFTs, NFTContent } from '../Contexts/NFTContext';
+import { NFTContent } from '../Contexts/NFTContext';
+import { useNFTs } from '../Contexts/useNFTs';
 import { encryptFile, uploadFileToIPFS } from '../Utils/utils'
 import { toast } from 'react-toastify'
 

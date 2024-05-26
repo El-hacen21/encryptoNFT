@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, ListGroup } from 'react-bootstrap';
 import { getSharedWithAddresses, revokeTokenAccess, revokeAllSharedAccess, getMaxUsersToRemove } from '../Blockchain/contract';
-import { formatAddress } from './Helpers';
+import { formatAddress } from './helpers';
 import { toast } from 'react-toastify'
 
 interface SharedAccessModalProps {
@@ -10,19 +10,29 @@ interface SharedAccessModalProps {
   onClose: () => void;
 }
 
+const fetchSharedAddresses = async (tokenId: number) => {
+  const addresses = await getSharedWithAddresses(tokenId);
+  return addresses;
+};
+
 export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, onClose }) => {
   const [sharedAddresses, setSharedAddresses] = useState<string[]>([]);
 
-  const fetchSharedAddresses = async () => {
-    const addresses = await getSharedWithAddresses(tokenId);
-    setSharedAddresses(addresses);
-  };
+
+  const loadSharedAddresses = useCallback(async () => {
+    try {
+      const addresses = await fetchSharedAddresses(tokenId);
+      setSharedAddresses(addresses);
+    } catch (error) {
+      console.error('Error fetching shared addresses:', error);
+    }
+  }, [tokenId]);
 
   useEffect(() => {
     if (open) {
-      fetchSharedAddresses();
+      void loadSharedAddresses();  // Using void to handle the promise
     }
-  }, [open, tokenId]);
+  }, [open, loadSharedAddresses]);
 
   const handleRevokeAccess = async (address: string) => {
     const isSuccessRevoke = await revokeTokenAccess(tokenId, address);

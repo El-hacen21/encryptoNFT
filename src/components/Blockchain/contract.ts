@@ -32,7 +32,7 @@ async function initializeProviderAndSigner() {
 }
 
 // Call the function to initialize provider and signer
-initializeProviderAndSigner();
+void initializeProviderAndSigner();
 
 // Create a contract instance with a signer, which enables sending transactions
 // const contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -69,6 +69,7 @@ async function getEvent(
 	const receipt = await tx.wait();
 	if (receipt?.logs) {
 		for (const log of receipt.logs) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			const event = contract?.interface.parseLog(log);
 			if (event?.name === eventName) {
 				return event;
@@ -246,13 +247,13 @@ export async function getSharedWithSupply(): Promise<number> {
 
 
 export async function reencrypt(tokenId: number,
-	publicKey: Uint8Array | undefined,
-	signature: string | undefined,
+	publicKey: Uint8Array,
+	signature: string,
 
 ): Promise<string[]> {
 
 	try {
-		const data = await contract?.reencrypt(tokenId, publicKey, signature);
+		const data: string[] = await contract?.reencrypt(tokenId, publicKey, signature);
 
 		if (!data) {
 			console.error('No return for contract.reencrypt');

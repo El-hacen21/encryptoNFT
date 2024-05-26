@@ -105,9 +105,7 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
     );
 
     const decodedMetadataString = new TextDecoder().decode(decryptedMetaData);
-    // console.log("Decrypted Metadata String:", decodedMetadataString); 
-
-    const decodedMetadata = JSON.parse(decodedMetadataString);
+    const decodedMetadata = JSON.parse(decodedMetadataString) as { name: string; type: string };
 
     return {
       file: arrayBufferToFile(decryptedData, decodedMetadata.name, decodedMetadata.type),
@@ -118,11 +116,13 @@ export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<D
   }
 }
 
+
 export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string> => {
-  const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
+  // const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
   const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
-  const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_URL || 'http://localhost:5001') as string;
+  const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_API_URL || 'http://localhost:5001') as string;
   const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string;
+  const LOCAL_IPFS_GATEWAY_URL = (import.meta.env.VITE_LOCAL_IPFS_GATEWAY_URL || 'http://localhost:8080') as string;
 
   const isProduction = import.meta.env.MODE === 'production';
 
@@ -136,11 +136,12 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
     const pinataOptions = JSON.stringify({ cidVersion: 1 });
     formData.append('pinataOptions', pinataOptions);
 
-    const uploadToPinata = async (retries: number = 3): Promise<string> => {
+    const uploadToPinata = async (retries = 3): Promise<string> => {
       try {
-        const response = await axios.post(PINATA_API_URL, formData, {
+        const response = await axios.post<{ IpfsHash: string }>(PINATA_API_URL, formData, {
           headers: {
-            'Authorization': `Bearer ${pinataJWT}`,
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            'Authorization': `Bearer ${import.meta.env.VITE_PINATA_JWT}`,
             'Content-Type': 'multipart/form-data',
           },
         });
@@ -171,13 +172,13 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
         throw new Error('IPFS upload failed');
       }
 
-      return `http://localhost:8080/ipfs/${result.path}`;
+      return `${LOCAL_IPFS_GATEWAY_URL}/ipfs/${result.path}`;
     } catch (error) {
       console.error('Error uploading to IPFS:', error);
       throw error;
     }
   }
-};
+}
 
 
 

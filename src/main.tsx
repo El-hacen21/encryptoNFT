@@ -7,10 +7,13 @@ import { NFTProvider } from './components/Contexts/NFTContext';
 
 // Overriding console.log based on the environment
 if (import.meta.env.MODE !== 'development') {
-  console.log = () => { };
-  console.warn = () => { };
-  console.info = () => { };
+  const noop = () => { /* no-op */ };
+
+  console.log = noop;
+  console.warn = noop;
+  console.info = noop;
 }
+
 
 
 import { Buffer as BufferPolyfill } from "buffer/";

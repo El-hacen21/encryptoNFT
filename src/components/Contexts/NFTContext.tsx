@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+// src/components/Contexts/NFTContext.tsx
+import React, { createContext, useState, ReactNode } from 'react';
 
 export interface NFTContent {
     id: number;
     file: File;
 }
 
-interface NFTContextType {
+export interface NFTContextType {
     nfts: NFTContent[];
     addNFT: (nft: NFTContent) => void;
     updateNFTs: (nfts: NFTContent[]) => void;
@@ -13,7 +14,7 @@ interface NFTContextType {
     removeAllNFTs: () => void; 
 }
 
-const NFTContext = createContext<NFTContextType | undefined>(undefined);
+export const NFTContext = createContext<NFTContextType | undefined>(undefined);
 
 interface ProviderProps {
     children: ReactNode;
@@ -47,13 +48,4 @@ export const NFTProvider: React.FC<ProviderProps> = ({ children }) => {
             {children}
         </NFTContext.Provider>
     );
-};
-
-// Custom hook to use the NFT context
-export const useNFTs = (): NFTContextType => {
-    const context = useContext(NFTContext);
-    if (context === undefined) {
-        throw new Error('useNFTs must be used within a NFTProvider');
-    }
-    return context;
 };

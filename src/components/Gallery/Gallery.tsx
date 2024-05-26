@@ -1,12 +1,14 @@
 import './Gallery.css'
-import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper, formatAddress } from './Helpers';
+import { getFileIcon, formatFileSize, downloadFile, formatAddress } from './helpers';
+import { ActionButtonHelper } from './ActionButtonHelper';
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
 import * as contract from '../Blockchain/contract';
 import { decryptFile, getCiphFileCidHash, DecryptedFileMetaData } from '../Utils/utils'
 import { importCryptoKey } from '../Utils/keyencrypt'
-import { useFhevm } from '../Contexts/FhevmContext';
-import { useNFTs, NFTContent } from '../Contexts/NFTContext';
+import { useFhevm } from '../Contexts/useFhevm';
+import { NFTContent } from '../Contexts/NFTContext';
+import { useNFTs } from '../Contexts/useNFTs';
 import { toast } from 'react-toastify'
 import { ArrowClockwise, Download } from 'react-bootstrap-icons';
 import { getSignature } from '../../fhevmjs';
@@ -88,36 +90,31 @@ export const Gallery = () => {
     };
 
     useEffect(() => {
-        fetchAccount();
+        const fetchAccountData = async () => {
+            await fetchAccount();
+        };
+
+        fetchAccountData().catch(console.error);
     }, []);
 
 
     const displayGallery = async (): Promise<void> => {
-
-        if (account === '') {
+        if (!account) {
             await fetchAccount();
-            if (account === '') {
+            if (!account) {
                 return;
             }
         }
 
         setShowGallery(true);
         try {
-            displayMyNFTs();
+            await displayMyNFTs();
+            await displaySharedWithMeNFTs();
         } catch (error) {
-            toast.error("Error during NFTs fetch. This could be due to browser extensions, firewall settings, or security policies blocking these requests.");
-            throw error;
+            console.error('Error displaying gallery:', error);
+            toast.error('Error displaying gallery.');
         }
-
-        try {
-            displaySharedWithMeNFTs();
-        }
-        catch (error) {
-            toast.error("Error during shared with NFTs fetch. This could be due to browser extensions, firewall settings, or security policies blocking these requests.");
-            throw error;
-        }
-
-    }
+    };
 
     const displayMyNFTs = async (): Promise<void> => {
         if (!nfts) {
@@ -125,17 +122,16 @@ export const Gallery = () => {
             return;
         }
 
-        if (account === '') {
+        if (!account) {
             await fetchAccount();
-            if (account === '') {
+            if (!account) {
                 return;
             }
         }
 
         try {
-            if (!instance) throw new Error("Intance retrieval failed.");
+            if (!instance) throw new Error('Instance retrieval failed.');
 
-            // Fetch total number of NFTs to manage pagination or UI elements
             const total = await contract.getSupply();
             setMyTotalNFTs(total);
 
@@ -145,35 +141,32 @@ export const Gallery = () => {
                 return;
             }
 
-            // Fetch My tokens
-            const myNFTs = await contract.getTokensInRange(0, 5); // Adjust the pagination as needed
+            const myNFTs = await contract.getTokensInRange(0, ITEMS_PERPAGE);
 
             const reencryption = await getSignature(contract.contractAddress, account);
 
-            const updatedNFTs = await Promise.all(myNFTs.map(async (token) => {
-                const decryptedFile = await accessFile(token.cidHash,
-                    reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
-                return {
-                    id: Number(token.tokenId),
-                    file: decryptedFile.file
-                };
-            }));
+            const updatedNFTs = await Promise.all(
+                myNFTs.map(async (token) => {
+                    const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId);
+                    return {
+                        id: Number(token.tokenId),
+                        file: decryptedFile.file
+                    };
+                })
+            );
 
-            // Update context with new tokens
             updateNFTs(updatedNFTs);
             toast.success('Gallery updated successfully!');
-
         } catch (error) {
-            toast.error('Error displaying Gallery!');
-            throw error;
+            console.error('Error displaying NFTs:', error);
+            toast.error('Error displaying NFTs.');
         }
-
     };
 
     const displaySharedWithMeNFTs = async (): Promise<void> => {
-        if (account === '') {
+        if (!account) {
             await fetchAccount();
-            if (account === '') {
+            if (!account) {
                 return;
             }
         }
@@ -192,23 +185,25 @@ export const Gallery = () => {
 
             const reencryption = await getSignature(contract.contractAddress, account);
 
-            const updatedTokens = await Promise.all(nftsSharedWithMe.map(async (token) => {
-                const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId); // Decrypt each file
-                return {
-                    id: Number(token.tokenId),
-                    file: decryptedFile.file
-                };
-            }));
+            const updatedTokens = await Promise.all(
+                nftsSharedWithMe.map(async (token) => {
+                    const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId);
+                    return {
+                        id: Number(token.tokenId),
+                        file: decryptedFile.file
+                    };
+                })
+            );
 
             setNFTsSharedWithMe(updatedTokens);
             toast.success('Shared NFTs updated successfully!');
-
         } catch (error) {
-            throw error;
+            console.error('Error displaying shared NFTs:', error);
+            toast.error('Error displaying shared NFTs.');
         }
     };
 
-    const accessFile = async (cidHash: string, publicKey: any, signature: any, tokenId: number): Promise<DecryptedFileMetaData> => {
+    const accessFile = async (cidHash: string, publicKey: Uint8Array, signature: string , tokenId: number): Promise<DecryptedFileMetaData> => {
 
         try {
             if (!instance) throw new Error("Intance retrieval failed.");

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserProvider, Eip1193Provider } from 'ethers';
-import { useFhevm } from '../Contexts/FhevmContext';
+import { useFhevm } from '../Contexts/useFhevm';
 
 import './Connect.css';
 import { Copy } from 'react-bootstrap-icons';
@@ -15,10 +15,12 @@ export const Connect: React.FC<{
   const [account, setAccount] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
-
-
+  //Display a modal
+  const [, setShowMetaMaskModal] = useState<boolean>(false);
+  const [copySuccess, setCopySuccess] = useState<string>('Click to Copy');
   // Use the context to access the FHEVM instance
   const { instance, createInstance } = useFhevm();
+
 
   const refreshAccounts = (accounts: string[]) => {
     setAccount(accounts[0] || '');
@@ -51,15 +53,7 @@ export const Connect: React.FC<{
     const eth = window.ethereum;
     if (!eth) {
       setError('No wallet has been found');
-      //Display a modal
-      const [, setShowMetaMaskModal] = useState<boolean>(false);
-
-      useEffect(() => {
-        // Check for MetaMask or any Web3 provider
-        if (typeof window.ethereum === 'undefined') {
-          setShowMetaMaskModal(true);
-        }
-      }, []);
+      setShowMetaMaskModal(true);
       return;
     }
 
@@ -77,6 +71,7 @@ export const Connect: React.FC<{
     eth.on('chainChanged', refreshNetwork);
 
   }, [refreshNetwork]);
+
 
   const connect = async () => {
     if (!provider) {
@@ -142,9 +137,6 @@ export const Connect: React.FC<{
   if (error) {
     return <p className="Connect__error">No wallet has been found.</p>;
   }
-
-
-  const [copySuccess, setCopySuccess] = useState<string>('Click to Copy');
 
   // Function to copy the address to the clipboard
   const copyAddressToClipboard = (account: string) => {

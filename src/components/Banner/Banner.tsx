@@ -1,5 +1,5 @@
 import './Banner.css'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import headerImg from "../../assets/img/zama_banner.png";
 import { ArrowRightCircle } from 'react-bootstrap-icons';
@@ -13,22 +13,17 @@ export const Banner = () => {
   const [text, setText] = useState('');
   const [delta, setDelta] = useState(300 - Math.random() * 100);
   const [, setIndex] = useState(1);
-  const toRotate = ["Zama"];
   const period = 2000;
 
 
-  useEffect(() => {
-    const ticker = setInterval(() => {
-      tick();
-    }, delta);
-    return () => { clearInterval(ticker) };
-  }, [text])
+  const toRotate = useMemo(() => ["Zama"], []);
 
-
-  const tick = () => {
+  const tick = useCallback(() => {
     const i = loopNum % toRotate.length;
     const fullText = toRotate[i];
-    const updatedText = isDeleting ? fullText.substring(0, text.length - 1) : fullText.substring(0, text.length + 1);
+    const updatedText = isDeleting
+      ? fullText.substring(0, text.length - 1)
+      : fullText.substring(0, text.length + 1);
 
     setText(updatedText);
 
@@ -48,7 +43,16 @@ export const Banner = () => {
     } else {
       setIndex(prevIndex => prevIndex + 1);
     }
-  }
+  }, [isDeleting, loopNum, period, text.length, toRotate]);
+
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      tick();
+    }, delta);
+
+    return () => clearInterval(ticker);
+  }, [delta, tick]);
+
 
   const handleNavigation = () => {
     const anchor = document.querySelector('#mint');
