@@ -13,7 +13,6 @@ const LOCAL_IPFS_GATEWAY_URL = (import.meta.env.VITE_LOCAL_IPFS_GATEWAY_URL || '
 const PINATA_JWT = import.meta.env.VITE_PINATA_JWT as string;
 
 
-
 export interface CiphFile {
   ciphFileData: string;  // Base64 encoded string
   ciphFileMetadata: string;  // Base64 encoded string
@@ -24,9 +23,6 @@ export interface CiphFile {
   };
 }
 
-// export interface EncryptedFile extends CiphFile {
-//   encryptedFileKey: Uint8Array[];  // Array of Uint8Array, each representing a key segment resulting from instance.encrypt64
-// }
 
 export interface DecryptedFileMetaData {
   file: File;
@@ -67,8 +63,6 @@ export async function encryptFile(file: File, key: CryptoKey): Promise<CiphFile>
       metadataArrayBuffer
     );
 
-    // console.log("metadataString", metadataString);
-
     const ciphFile: CiphFile = {
       ciphFileData: bufferToBase64(ciphFileData),
       ciphFileMetadata: bufferToBase64(ciphFileMetadata),
@@ -88,10 +82,8 @@ export async function encryptFile(file: File, key: CryptoKey): Promise<CiphFile>
 
 export async function decryptFile(ciphFile: CiphFile, key: CryptoKey): Promise<DecryptedFileMetaData> {
   try {
-    // Ensure the counter is a Uint8Array
     const counter = convertCounterObjectToUint8Array(ciphFile.encryptionAlgorithm.counter);
 
-    // console.log("Decrypted counter : ", encryptionAlgorithm.counter);
     // Decrypt the data using the provided key and algorithm details
     const decryptedData = await window.crypto.subtle.decrypt(
       {

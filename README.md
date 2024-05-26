@@ -94,7 +94,6 @@ In more detail, the function `displayGallery` automatically performs the followi
 1. **Generation of the target public Key for Reencryption** :
     - The user _shared-with_ of a token needs to receive the `fileKey` encrypted under an encryption key `publicKey` which it owns. It thus generates an encryption key pair (unless it has already one associated to the contract) using the function `getSignature(contractAddress, account)`.
   
-
       > This function is borrowed from [fhevmjs.ts](https://github.com/zama-ai/fhevm-react-template/blob/main/src/fhevmjs.ts).
 
       ```javascript 
