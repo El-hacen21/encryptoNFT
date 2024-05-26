@@ -82,7 +82,6 @@ export const Mint = () => {
     const keySegments = await exportCryptoKey(fileKey);
     for (const segment of keySegments) {
       const encrypted = instance.encrypt64(segment);
-      console.log("encrypted64 : ", encrypted);
       encryptedFileKey.push(encrypted);
     }
 
