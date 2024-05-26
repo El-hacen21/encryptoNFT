@@ -23,11 +23,12 @@ export const NavBar = () => {
     setActiveLink(value);
   };
 
- 
+
   const [showHowItWorksModal, setShowHowItWorksModal] = useState<boolean>(false);
 
   const toggleHowItWorksModal = () => setShowHowItWorksModal(!showHowItWorksModal);
 
+  const baseUrl = process.env.VITE_APP_BASE_URL || '/';
 
   return (
     <Navbar expand="md" className={scrolled ? "scrolled" : ""}>
@@ -40,10 +41,31 @@ export const NavBar = () => {
         </Navbar.Toggle>
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto">
-            <Nav.Link as={HashLink} to="/#home" className={activeLink === 'home' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('home')}>Home</Nav.Link>
-            <Nav.Link as={HashLink} to="/#mint" className={activeLink === 'mint' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('mint')}>Mint</Nav.Link>
-            <Nav.Link as={HashLink} to="/#gallery" className={activeLink === 'gallery' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('gallery')}>Gallery</Nav.Link>
-
+            <Nav.Link
+              as={HashLink}
+              to={`${baseUrl}#home`}
+              className={activeLink === 'home' ? 'active navbar-link' : 'navbar-link'}
+              onClick={() => onUpdateActiveLink('home')}
+            >
+              Home
+            </Nav.Link>
+            <Nav.Link
+              as={HashLink}
+              to={`${baseUrl}#mint`}
+              className={activeLink === 'mint' ? 'active navbar-link' : 'navbar-link'}
+              onClick={() => onUpdateActiveLink('mint')}
+            >
+              Mint
+            </Nav.Link>
+            <Nav.Link
+              as={HashLink}
+              to={`${baseUrl}#gallery`}
+              className={activeLink === 'gallery' ? 'active navbar-link' : 'navbar-link'}
+              onClick={() => onUpdateActiveLink('gallery')}
+            >
+              Gallery
+            </Nav.Link>
+            
             <Nav.Link
               as={HashLink}
               to="/#mint"
