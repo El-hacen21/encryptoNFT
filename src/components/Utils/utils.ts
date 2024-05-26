@@ -122,58 +122,55 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
   const pinataJWT = import.meta.env.VITE_PINATA_JWT as string;
   const PINATA_API_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
   const LOCAL_IPFS_URL = (import.meta.env.VITE_LOCAL_IPFS_URL || 'http://localhost:5001') as string;
-  const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string; // Ensure you set this in your .env files
+  const DEDICATED_IPFS_URL = import.meta.env.VITE_DEDICATED_IPFS_URL as string;
 
-  // Determine the environment
   const isProduction = import.meta.env.MODE === 'production';
 
-  // Prepare the encrypted file as a JSON string
   const encryptedFileString = JSON.stringify(encryptedFile);
   const encoder = new TextEncoder();
   const fileArrayBuffer = encoder.encode(encryptedFileString);
   const formData = new FormData();
-
-  // Append the encrypted file as a Blob of type 'application/json'
   formData.append("file", new Blob([fileArrayBuffer], { type: 'application/json' }));
 
   if (isProduction) {
-    // Production: Upload to Pinata
-    const pinataOptions = JSON.stringify({
-      cidVersion: 1,
-    });
+    const pinataOptions = JSON.stringify({ cidVersion: 1 });
     formData.append('pinataOptions', pinataOptions);
 
-    try {
-      const response = await axios.post(PINATA_API_URL, formData, {
-        headers: {
-          'Authorization': `Bearer ${pinataJWT}`,
-          'Content-Type': 'multipart/form-data',
+    const uploadToPinata = async (retries: number = 3): Promise<string> => {
+      try {
+        const response = await axios.post(PINATA_API_URL, formData, {
+          headers: {
+            'Authorization': `Bearer ${pinataJWT}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        if (response.status !== 200) {
+          throw new Error(`IPFS upload failed: ${response.statusText}`);
         }
-      });
 
-      if (response.status !== 200) {
-        throw new Error(`IPFS upload failed: ${response.statusText}`);
+        return `${DEDICATED_IPFS_URL}/ipfs/${response.data.IpfsHash}`;
+      } catch (error) {
+        console.error("Error uploading to IPFS via Pinata:", error);
+        if (retries > 0) {
+          console.warn(`Retrying... (${retries} attempts left)`);
+          return uploadToPinata(retries - 1);
+        }
+        throw error;
       }
+    };
 
-      // Construct the URL to access the file via your dedicated IPFS gateway
-      return `${DEDICATED_IPFS_URL}/ipfs/${response.data.IpfsHash}`;
-    } catch (error) {
-      console.error("Error uploading to IPFS via Pinata:", error);
-      throw error;
-    }
+    return uploadToPinata();
   } else {
-    // Development: Upload to local IPFS
     const ipfs = create({ url: LOCAL_IPFS_URL });
 
     try {
-      // Add the file to IPFS
       const result = await ipfs.add(formData.get('file') as Blob);
 
       if (!result || !result.path) {
         throw new Error('IPFS upload failed');
       }
 
-      // Use the local IPFS gateway URL to access the file
       return `http://localhost:8080/ipfs/${result.path}`;
     } catch (error) {
       console.error('Error uploading to IPFS:', error);
@@ -181,6 +178,7 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
     }
   }
 };
+
 
 
 export async function getCiphFileCidHash(cidHash: string): Promise<CiphFile> {
