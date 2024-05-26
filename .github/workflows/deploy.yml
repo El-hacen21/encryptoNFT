@@ -22,8 +22,8 @@ jobs:
       - name: Load environment variables
         run: |
           echo "VITE_APP_BASE_URL=/zama_bounty/" >> $GITHUB_ENV
-          echo "VITE_LOCAL_IPFS_API_URL=${{ secrets.VITE_LOCAL_IPFS_API_URL }}" >> $GITHUB_ENV
-          echo "VITE_LOCAL_IPFS_GATEWAY_URL=${{ secrets.VITE_LOCAL_IPFS_GATEWAY_URL }}" >> $GITHUB_ENV
+          echo "VITE_LOCAL_IPFS_API_URL=http://localhost:5001 >> $GITHUB_ENV
+          echo "VITE_LOCAL_IPFS_GATEWAY_URL=http://localhost:8080 >> $GITHUB_ENV
 
       - name: Load secret environment variables
         run: |
