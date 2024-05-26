@@ -109,11 +109,11 @@
   
   .file-upload-status {
     color: #4CAF50;
-    margin-top: 10px;
+    margin-top: 5px;
   }
   
   .uploaded-file-info {
-    margin-top: 5px;
+    margin-top: 2px;
   }
 
   .file-upload-error {
