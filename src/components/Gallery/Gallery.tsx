@@ -1,15 +1,15 @@
-import './Gallery.css'
+import './Gallery.css';
 import { getFileIcon, formatFileSize, downloadFile, formatAddress } from './helpers';
 import { ActionButtonHelper } from './ActionButtonHelper';
-import { useState, useEffect } from 'react';
-import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
+import { useState, useEffect, useCallback } from 'react';
+import { Container, Row, Col, Table, Button, Pagination } from 'react-bootstrap';
 import * as contract from '../Blockchain/contract';
-import { decryptFile, getCiphFileCidHash, DecryptedFileMetaData } from '../Utils/utils'
-import { importCryptoKey } from '../Utils/keyencrypt'
+import { decryptFile, getCiphFileCidHash, DecryptedFileMetaData } from '../Utils/utils';
+import { importCryptoKey } from '../Utils/keyencrypt';
 import { useFhevm } from '../Contexts/useFhevm';
 import { NFTContent } from '../Contexts/NFTContext';
 import { useNFTs } from '../Contexts/useNFTs';
-import { toast } from 'react-toastify'
+import { toast } from 'react-toastify';
 import { ArrowClockwise, Download } from 'react-bootstrap-icons';
 import { getSignature } from '../../fhevmjs';
 
@@ -18,58 +18,43 @@ export const Gallery = () => {
     const { instance, createInstance } = useFhevm();
     const [myTotalNFTs, setMyTotalNFTs] = useState(0);
     const [totalNFTsSharedWithMe, setTotalNFTsSharedWithMe] = useState(0);
-
-    const ITEMS_PERPAGE = 5; // Cannot be zero
-
     const [showGallery, setShowGallery] = useState(false);
     const { nfts, removeNFT, updateNFTs, removeAllNFTs } = useNFTs();
     const [nftsSharedWithMe, setNFTsSharedWithMe] = useState<NFTContent[]>([]);
-
     const [account, setAccount] = useState<string>('');
 
-    const handleShare = async (tokenId: number, to: string) => {
+    const ITEMS_PERPAGE = 5;
+
+    const handleShare = useCallback(async (tokenId: number, to: string) => {
         const response = await contract.shareToken(to, tokenId);
-
         if (response) {
-            toast.success(`The NFT#${tokenId} has been share with : ${formatAddress(to)}`);
-
+            toast.success(`The NFT#${tokenId} has been shared with: ${formatAddress(to)}`);
         } else {
             toast.error(`Could not share NFT #${tokenId}! Please check if it is already shared with ${formatAddress(to)}.`);
         }
-    };
+    }, []);
 
-
-    const handleTransfer = async (tokenId: number, to: string,) => {
+    const handleTransfer = useCallback(async (tokenId: number, to: string) => {
         const response = await contract.transferToken(to, tokenId);
-
         if (response) {
-            toast.success(`The NFT#${tokenId} has been transfered and will be no more accessible!`);
-
-            // Update the gallery display
+            toast.success(`The NFT#${tokenId} has been transferred and will be no more accessible!`);
             removeNFT(tokenId);
         } else {
             toast.error(`Could not transfer the NFT#${tokenId}!`);
         }
-    };
+    }, [removeNFT]);
 
-
-    const handleDelete = async (tokenId: number) => {
+    const handleDelete = useCallback(async (tokenId: number) => {
         const maxToRemove = await contract.getMaxUsersToRemove();
         const response = await contract.burnToken(tokenId, maxToRemove);
-
         if (response) {
             toast.success(`The NFT#${tokenId} has been deleted and will be no more accessible!`);
-
-            //Update the gallery display
             removeNFT(tokenId);
         } else {
             toast.error(`Could not delete the NFT#${tokenId}!`);
         }
+    }, [removeNFT]);
 
-    };
-
-
-    // Effect to create the instance
     useEffect(() => {
         if (!instance) {
             createInstance().catch(console.error);
@@ -77,57 +62,61 @@ export const Gallery = () => {
     }, [instance, createInstance]);
 
 
-    const fetchAccount = async () => {
+    const fetchAccount = useCallback(async () => {
         try {
             const fetchedAccount = await contract.getAccount();
             if (fetchedAccount) {
                 setAccount(fetchedAccount);
+                return fetchedAccount;
             }
         } catch (error) {
             console.error(error);
-            toast.info('Merci de vous connecter pour continuer.');
+            toast.info('Please connect to continue.');
         }
-    };
-
-    useEffect(() => {
-        const fetchAccountData = async () => {
-            await fetchAccount();
-        };
-
-        fetchAccountData().catch(console.error);
+        return '';
     }, []);
 
-
-    const displayGallery = async (): Promise<void> => {
-        if (!account) {
-            await fetchAccount();
-            if (!account) {
-                return;
+    useEffect(() => {
+        const initializeAccount = async () => {
+            const fetchedAccount = await fetchAccount();
+            if (fetchedAccount) {
+                setAccount(fetchedAccount);
             }
-        }
+        };
 
-        setShowGallery(true);
+        void initializeAccount();
+    }, [fetchAccount]);
+
+
+
+    const accessFile = useCallback(async (cidHash: string, publicKey: Uint8Array, signature: string, tokenId: number): Promise<DecryptedFileMetaData> => {
         try {
-            await displayMyNFTs();
-            await displaySharedWithMeNFTs();
-        } catch (error) {
-            console.error('Error displaying gallery:', error);
-            toast.error('Error displaying gallery.');
-        }
-    };
+            if (!instance) throw new Error('Instance retrieval failed.');
 
-    const displayMyNFTs = async (): Promise<void> => {
-        if (!nfts) {
-            toast.info('You have no NFTs to display!');
-            return;
-        }
+            const ciphFile = await getCiphFileCidHash(cidHash);
+            if (!ciphFile) throw new Error('Decrypting data failed.');
 
-        if (!account) {
-            await fetchAccount();
-            if (!account) {
-                return;
+            const reEncryptedFileKey = await contract.reencrypt(tokenId, publicKey, signature);
+            const decryptedKey: bigint[] = [];
+
+            for (const element of reEncryptedFileKey) {
+                if (element) {
+                    const result = instance.decrypt(contract.contractAddress, element);
+                    decryptedKey.push(result);
+                }
             }
+
+            const fileKey = await importCryptoKey(decryptedKey);
+            const decryptedFile = await decryptFile(ciphFile, fileKey);
+            return decryptedFile;
+        } catch (error) {
+            toast.error(`Error while trying to access the NFT#${tokenId}. Could not fetch ${cidHash}`);
+            throw error;
         }
+    }, [instance]);
+
+    const displayMyNFTs = useCallback(async (currentAccount: string) => {
+        if (!currentAccount) return;
 
         try {
             if (!instance) throw new Error('Instance retrieval failed.');
@@ -142,15 +131,14 @@ export const Gallery = () => {
             }
 
             const myNFTs = await contract.getTokensInRange(0, ITEMS_PERPAGE);
-
-            const reencryption = await getSignature(contract.contractAddress, account);
+            const reencryption = await getSignature(contract.contractAddress, currentAccount);
 
             const updatedNFTs = await Promise.all(
                 myNFTs.map(async (token) => {
                     const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId);
                     return {
                         id: Number(token.tokenId),
-                        file: decryptedFile.file
+                        file: decryptedFile.file,
                     };
                 })
             );
@@ -161,15 +149,10 @@ export const Gallery = () => {
             console.error('Error displaying NFTs:', error);
             toast.error('Error displaying NFTs.');
         }
-    };
+    }, [instance, updateNFTs, removeAllNFTs, accessFile]);
 
-    const displaySharedWithMeNFTs = async (): Promise<void> => {
-        if (!account) {
-            await fetchAccount();
-            if (!account) {
-                return;
-            }
-        }
+    const displaySharedWithMeNFTs = useCallback(async (currentAccount: string) => {
+        if (!currentAccount) return;
 
         try {
             const totalShareWith = await contract.getSharedWithSupply();
@@ -182,15 +165,14 @@ export const Gallery = () => {
             }
 
             const nftsSharedWithMe = await contract.getSharedTokensInRange(0, totalShareWith);
-
-            const reencryption = await getSignature(contract.contractAddress, account);
+            const reencryption = await getSignature(contract.contractAddress, currentAccount);
 
             const updatedTokens = await Promise.all(
                 nftsSharedWithMe.map(async (token) => {
                     const decryptedFile = await accessFile(token.cidHash, reencryption.publicKey, reencryption.signature, token.tokenId);
                     return {
                         id: Number(token.tokenId),
-                        file: decryptedFile.file
+                        file: decryptedFile.file,
                     };
                 })
             );
@@ -201,35 +183,32 @@ export const Gallery = () => {
             console.error('Error displaying shared NFTs:', error);
             toast.error('Error displaying shared NFTs.');
         }
-    };
+    }, [accessFile]);
 
-    const accessFile = async (cidHash: string, publicKey: Uint8Array, signature: string , tokenId: number): Promise<DecryptedFileMetaData> => {
+    const displayGallery = useCallback(async () => {
+        let currentAccount = account;
+        if (!currentAccount) {
+            currentAccount = await fetchAccount();
+            if (currentAccount) {
+                setAccount(currentAccount);
+            }
+        }
+
+        if (!currentAccount) {
+            toast.info('Please connect to continue.');
+            return; // Exit if no account is fetched
+        }
+
+        setShowGallery(true);
 
         try {
-            if (!instance) throw new Error("Intance retrieval failed.");
-
-            const ciphFile = await getCiphFileCidHash(cidHash);
-            if (!ciphFile) throw new Error("Dencrypting data failed.");
-
-            const reEncryptedFileKey = await contract.reencrypt(tokenId, publicKey, signature);
-            const decryptedKey: bigint[] = [];
-
-            reEncryptedFileKey.forEach((element) => {
-                if (element) {
-                    const result = instance.decrypt(contract.contractAddress, element);
-                    decryptedKey.push(result);
-                }
-            });
-
-            const fileKey = await importCryptoKey(decryptedKey);
-            const decryptedFile = await decryptFile(ciphFile, fileKey);
-            return decryptedFile;
-
+            await Promise.all([displayMyNFTs(currentAccount), displaySharedWithMeNFTs(currentAccount)]);
         } catch (error) {
-            toast.error(`Error Wile trying to access the NFT# ${tokenId}. could not fetch ${cidHash}`);
-            throw error;
+            console.error('Error displaying gallery:', error);
+            toast.error('Error displaying gallery.');
         }
-    };
+    }, [account, fetchAccount, displayMyNFTs, displaySharedWithMeNFTs]);
+
 
 
     return (
@@ -265,7 +244,7 @@ export const Gallery = () => {
                                 <th className="size">Size</th>
                                 <th className="actions">
                                     <button
-                                        onClick={() => displayMyNFTs()}
+                                        onClick={() => displayMyNFTs(account)}
                                         title="Refresh Gallery"
                                         className="icon-button" // Custom CSS class
                                     >
@@ -316,7 +295,7 @@ export const Gallery = () => {
                                 <th className="size"></th>
                                 <th className="actions">
                                     <button
-                                        onClick={() => displaySharedWithMeNFTs()}
+                                        onClick={() => displaySharedWithMeNFTs(account)}
                                         title="Refresh Gallery"
                                         className="icon-button" // Custom CSS class
                                     >

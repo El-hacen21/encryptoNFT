@@ -28,7 +28,7 @@ export const NavBar = () => {
 
   const toggleHowItWorksModal = () => setShowHowItWorksModal(!showHowItWorksModal);
 
-  const baseUrl = process.env.VITE_APP_BASE_URL || '/';
+  const baseUrl: string = import.meta.env.VITE_APP_BASE_URL || '/' as string;
 
   return (
     <Navbar expand="md" className={scrolled ? "scrolled" : ""}>
@@ -65,7 +65,7 @@ export const NavBar = () => {
             >
               Gallery
             </Nav.Link>
-            
+
             <Nav.Link
               as={HashLink}
               to="/#mint"
