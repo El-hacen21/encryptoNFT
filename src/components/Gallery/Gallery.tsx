@@ -3,7 +3,7 @@ import { getFileIcon, formatFileSize, downloadFile, ActionButtonHelper, formatAd
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Table, Button, Pagination, } from 'react-bootstrap';
 import * as contract from '../Blockchain/contract';
-import { decryptFile, getEncryptedFileCidHash, DecryptedFileMetaData } from '../Utils/utils'
+import { decryptFile, getCiphFileCidHash, DecryptedFileMetaData } from '../Utils/utils'
 import { importCryptoKey } from '../Utils/keyencrypt'
 import { useFhevm } from '../Contexts/FhevmContext';
 import { useNFTs, NFTContent } from '../Contexts/NFTContext';
@@ -22,6 +22,8 @@ export const Gallery = () => {
     const [showGallery, setShowGallery] = useState(false);
     const { nfts, removeNFT, updateNFTs, removeAllNFTs } = useNFTs();
     const [nftsSharedWithMe, setNFTsSharedWithMe] = useState<NFTContent[]>([]);
+
+    const [account, setAccount] = useState<string>('');
 
     const handleShare = async (tokenId: number, to: string) => {
         const response = await contract.shareToken(to, tokenId);
@@ -64,14 +66,39 @@ export const Gallery = () => {
 
     };
 
+
+    // Effect to create the instance
     useEffect(() => {
         if (!instance) {
             createInstance().catch(console.error);
         }
-    }, [instance, createInstance, page]);
+    }, [instance, createInstance]);
+
+
+    const fetchAccount = async () => {
+        try {
+            const fetchedAccount = await contract.getAccount();
+            if (fetchedAccount) {
+                setAccount(fetchedAccount);
+            } else {
+                toast.info('Merci de vous connecter pour continuer.');
+            }
+        } catch (error) {
+            toast.info('Merci de vous connecter pour continuer.');
+            console.error(error);
+        }
+    };
 
 
     const displayGallery = async (): Promise<void> => {
+
+        if (account === '') {
+            await fetchAccount();
+            if (account === '') {
+                return;
+            }
+        }
+
         setShowGallery(true);
         try {
             displayMyNFTs();
@@ -90,11 +117,20 @@ export const Gallery = () => {
 
     }
 
+
     const displayMyNFTs = async (): Promise<void> => {
         if (!nfts) {
             toast.info('You have no NFTs to display!');
             return;
         }
+
+        if (account === '') {
+            await fetchAccount();
+            if (account === '') {
+                return;
+            }
+        }
+
         try {
             if (!instance) throw new Error("Intance retrieval failed.");
 
@@ -110,9 +146,6 @@ export const Gallery = () => {
 
             // Fetch My tokens
             const myNFTs = await contract.getTokensInRange(0, 5); // Adjust the pagination as needed
-
-            const account = await contract.getAccount();
-            if (!account) throw new Error("Account retrieval failed.");
 
             const reencryption = await getSignature(contract.contractAddress, account);
 
@@ -136,8 +169,13 @@ export const Gallery = () => {
 
     };
 
-
     const displaySharedWithMeNFTs = async (): Promise<void> => {
+        if (account === '') {
+            await fetchAccount();
+            if (account === '') {
+                return;
+            }
+        }
 
         try {
             const totalShareWith = await contract.getSharedWithSupply();
@@ -150,9 +188,6 @@ export const Gallery = () => {
             }
 
             const nftsSharedWithMe = await contract.getSharedTokensInRange(0, totalShareWith);
-
-            const account = await contract.getAccount();
-            if (!account) throw new Error("Account retrieval failed.");
 
             const reencryption = await getSignature(contract.contractAddress, account);
 
@@ -177,8 +212,8 @@ export const Gallery = () => {
         try {
             if (!instance) throw new Error("Intance retrieval failed.");
 
-            const encryptedFile = await getEncryptedFileCidHash(cidHash);
-            if (!encryptedFile) throw new Error("Dencrypting data failed.");
+            const ciphFile = await getCiphFileCidHash(cidHash);
+            if (!ciphFile) throw new Error("Dencrypting data failed.");
 
             const reEncryptedFileKey = await contract.reencrypt(tokenId, publicKey, signature);
             const decryptedKey: bigint[] = [];
@@ -191,7 +226,7 @@ export const Gallery = () => {
             });
 
             const fileKey = await importCryptoKey(decryptedKey);
-            const decryptedFile = await decryptFile(encryptedFile, fileKey);
+            const decryptedFile = await decryptFile(ciphFile, fileKey);
             return decryptedFile;
 
         } catch (error) {

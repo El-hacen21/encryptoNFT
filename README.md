@@ -27,7 +27,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
     
     - The secret content `file` is symmetrically encrypted to produce the ciphertext:
       ```javascript 
-        const ciphFile = await encryptFile(file, fileKey);
+      const ciphFile = await encryptFile(file, fileKey);
       ```
    
       ```javascript  
@@ -36,17 +36,22 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
    
       > The `fileKey` was decomposed into an array of four 64-bit entries to be passed to `instance.encrypt64`. As output, the `encryptedFileKey`  will contain 4 `Uint8Array` objects, each resulting from calling `instance.encrypt64`.
 
-    <!-- - Then, the `encryptedFileKey` is added to the `ciphFile: CiphFile` to create the `encryptedFile: EncryptedFile`
+      <!-- > For more details on how `CiphFile` and  are generated see [utils.ts](/src/components/Utils/utils.ts). -->
+
+      <!-- `EncryptedFile` -->
+
+    <!-- - Then, the `encryptedFileKey` is added to the `ciphFile: CiphFile` to create the `ciphFile: EncryptedFile`
       ```
-      encryptedFile <-- (ciphFile|encryptedFileKey). 
+      ciphFile <-- (ciphFile|encryptedFileKey). 
       ``` -->
       <!-- > Inclusion of encryptedFileKey is not currently used, but enables a potential optimization saving 1000x blockchain storage space. -->
-      > For more details on how `CiphFile` and `EncryptedFile` are generated see [utils.ts](/src/components/Utils/utils.ts).
+          
+      
 
 
 
 2. **Storage on IPFS** :
-    - `encryptedFile` is uploaded on IPFS , and the `cidHash` (unique IPFS identifier of `encryptedFile`) is retrieved.
+    - `ciphFile` is uploaded on IPFS , and the `cidHash` (unique IPFS identifier of `ciphFile`) is retrieved.
       ```javascript 
       const cidHash = await uploadFileToIPFS(ciphFile);
       ```
@@ -54,7 +59,7 @@ In detail: the Creator uploads a secret content (`file`) in the graphical interf
       > Pinata (https://www.pinata.cloud/) is a cloud-based service that simplifies uploading and managing files on IPFS. It is used to upload files to IPFS through an API key.
 
 3. **Minting of the NFT** :
-    An NFT (token) is created (or "minted") through the contract, with an IPFS reference to the `encryptedFile`, and with the `encryptedFileKey` added as metadata 
+    An NFT (token) is created (or "minted") through the contract, with an IPFS reference to the `ciphFile`, and with the `encryptedFileKey` added as metadata 
       ```javascript 
       const token = await mintToken(cidHash, encryptedFileKey);
       ```
@@ -82,7 +87,7 @@ The function `displayGallery` (in [Gallery.tsx](/src/components/Gallery/Gallery.
 The function performs automatically all the following steps.
 
 Summarizing, for each secret content (token) for which the user is shared-with, it queries the re-encryption of the `fileKey` under a public encryption key `publicKey` which the user owns.
-Then, it decrypts this re-encryption to obtain `fileKey`, downloads the public ciphertext (`encryptedFile`) from IPFS and finally decrypts it into `file` using the `fileKey`.
+Then, it decrypts this re-encryption to obtain `fileKey`, downloads the public ciphertext (`ciphFile`) from IPFS and finally decrypts it into `file` using the `fileKey`.
 
 In more detail, the function `displayGallery` automatically performs the following steps for each token in the `ownerTokens[user]` to display the NFTs owned by the user, and in `sharedTokens[user]` for the NFTs with which the user is _shared-with_. For a better user interface, two separate components are created in the gallery. One, managed by `displayMyNFTs`, displays only the owned NFTs; the other, `displaySharedWithMeNFTs`, displays the shared NFTs. These two components can be refreshed separately. The main difference between owned NFTs and shared NFTs is that the latter can only be downloaded; other functionalities are not possible.
 
@@ -129,11 +134,11 @@ In more detail, the function `displayGallery` automatically performs the followi
   
       > This is done via the call to `instance.decrypt`.
        <!-- Note that the "instance" is not the fhEVM, we are not making a public decryption here. It is instead the local instance of the Shared-with, the one with which it generated its personal "publicKey".` -->
-    - Using the `fileKey` to decrypt the `encryptedFile`: 
+    - Using the `fileKey` to decrypt the `ciphFile`: 
       ```javascript
-      const decryptedFile = await decryptFile(encryptedFile, fileKey);
+      const decryptedFile = await decryptFile(ciphFile, fileKey);
       ```
-      (`decryptedFile` <-- `AES-CTR.Decrypt("encryptedFile","fileKey")`) 
+      (`decryptedFile` <-- `AES-CTR.Decrypt("ciphFile","fileKey")`) 
         which is thus equal to the `file` initially uploaded by the Creator.
 
 <!-- ## IV. Scalability, thanks to Delegation to an untrusted Acces Broker

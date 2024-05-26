@@ -158,7 +158,6 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
         throw new Error(`IPFS upload failed: ${response.statusText}`);
       }
 
-
       // Construct the URL to access the file via your dedicated IPFS gateway
       return `${DEDICATED_IPFS_URL}/ipfs/${response.data.IpfsHash}`;
     } catch (error) {
@@ -187,7 +186,7 @@ export const uploadFileToIPFS = async (encryptedFile: CiphFile): Promise<string>
 };
 
 
-export async function getEncryptedFileCidHash(cidHash: string): Promise<CiphFile> {
+export async function getCiphFileCidHash(cidHash: string): Promise<CiphFile> {
 
   try {
     const response = await fetch(cidHash, {

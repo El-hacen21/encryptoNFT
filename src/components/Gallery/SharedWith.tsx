@@ -18,7 +18,6 @@ export const SharedWith: React.FC<SharedAccessModalProps> = ({ tokenId, open, on
     setSharedAddresses(addresses);
   };
 
-
   useEffect(() => {
     if (open) {
       fetchSharedAddresses();

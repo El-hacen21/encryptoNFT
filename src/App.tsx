@@ -13,9 +13,6 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { MetaMaskAlertModal } from './components/MetaMaskAlert'
 
-
-
-
 function App() {
   const [, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

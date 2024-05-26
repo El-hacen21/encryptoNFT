@@ -19,7 +19,7 @@ export const Mint = () => {
   const showMintingErrorToast = () => {
     const content = (
       <div>
-        Minting the file as an NFT failed. Ensure you are connected and have enough Zama: you acquire Zama from&nbsp;
+        Minting the file as an NFT failed. Ensure you have enough Zama: you acquire Zama from&nbsp;
         <a href="https://faucet.zama.ai/" target="_blank" rel="noopener noreferrer">
           https://faucet.zama.ai/
         </a>.
@@ -40,7 +40,10 @@ export const Mint = () => {
       const fileKey = await generateKey();
 
       const account = await getAccount();
-      if (!account) throw new Error("Account retrieval failed.");
+      if (!account) {
+        toast.info('Merci de vous connecter pour continuer.');
+        return;
+      }
       if (!instance) throw new Error("Intance retrieval failed.");
 
       const ciphFile = await encryptFile(file, fileKey);

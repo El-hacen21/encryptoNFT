@@ -17,7 +17,6 @@ import { Buffer as BufferPolyfill } from "buffer/";
 (window as any).Buffer = BufferPolyfill;
 
 
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <FhevmProvider>
