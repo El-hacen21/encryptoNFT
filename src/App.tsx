@@ -77,7 +77,7 @@ function App() {
         <Mint />
         <Gallery />
 
-        <Footer githubUrl='https://github.com/El-hacen21/zama_bounty/' />
+        <Footer githubUrl='https://github.com/El-hacen21/encryptoNFT/' />
       </div>
 
     </Router>

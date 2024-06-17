@@ -1,6 +1,6 @@
 # Documentation of the on-chain DRM system using Zama's fhEVM, by El-Hacen Diallo & Matthieu Rambaud
 
-[Link to the Application](https://el-hacen21.github.io/zama_bounty/)
+[Link to the Application](https://el-hacen21.github.io/encryptoNFT/)
 
 
 This document gives an overview of the process of creation and management of NFTs doing access control to secret contents. The management of the NFTs is done by the unique [contract](/src/components/Blockchain/contract.sol) and the interfaces ([Mint](/src/components/Mint/) and [Gallery](/src/components/Gallery/)) enable to interact with this contract and with the storage place of the encrypted secret contents.

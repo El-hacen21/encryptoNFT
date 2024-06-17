@@ -21,7 +21,7 @@ jobs:
 
       - name: Load environment variables
         run: |
-          echo "VITE_APP_BASE_URL=/zama_bounty/" >> $GITHUB_ENV
+          echo "VITE_APP_BASE_URL=/encryptoNFT/" >> $GITHUB_ENV
           echo "VITE_LOCAL_IPFS_API_URL=http://localhost:5001" >> $GITHUB_ENV
           echo "VITE_LOCAL_IPFS_GATEWAY_URL=http://localhost:8080" >> $GITHUB_ENV
         
